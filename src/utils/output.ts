@@ -241,9 +241,12 @@ export class Output {
 	/**
 	 * Format a package name with brackets
 	 */
-	static formatPackageName(name: string, color?: string): string {
+	static formatPackageName(
+		name: string,
+		color?: 'blue' | 'green' | 'red' | 'yellow' | 'dim'
+	): string {
 		const formatted = `[${name}]`;
-		return color ? pc[color as keyof typeof pc](formatted) : formatted;
+		return color ? pc[color](formatted) : formatted;
 	}
 
 	/**

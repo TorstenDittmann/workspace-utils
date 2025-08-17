@@ -6,9 +6,10 @@ export class BunPackageManager implements PackageManager {
 	readonly name = 'bun';
 
 	isActive(workspaceRoot: string): boolean {
-		// Check for bun.lockb file
-		const lockFile = join(workspaceRoot, 'bun.lockb');
-		if (existsSync(lockFile)) {
+		// Check for bun lock files (both text and binary formats)
+		const textLockFile = join(workspaceRoot, 'bun.lock');
+		const binaryLockFile = join(workspaceRoot, 'bun.lockb');
+		if (existsSync(textLockFile) || existsSync(binaryLockFile)) {
 			return true;
 		}
 
@@ -74,6 +75,6 @@ export class BunPackageManager implements PackageManager {
 	}
 
 	getLockFileName(): string {
-		return 'bun.lockb';
+		return 'bun.lock';
 	}
 }

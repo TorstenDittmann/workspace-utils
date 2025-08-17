@@ -71,6 +71,9 @@ export class PackageManagerDetector {
 		// Check for package manager specific files
 		switch (pm.name) {
 			case 'bun':
+				// Check for both bun.lock (text) and bun.lockb (binary) formats
+				if (existsSync(join(workspaceRoot, 'bun.lock'))) confidence += 100;
+				if (existsSync(join(workspaceRoot, 'bun.lockb'))) confidence += 100;
 				if (existsSync(join(workspaceRoot, 'bunfig.toml'))) confidence += 50;
 				break;
 			case 'pnpm':

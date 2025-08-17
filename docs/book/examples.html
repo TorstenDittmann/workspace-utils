@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+	<head>
+		<!-- Book generated using mdBook -->
+		<meta charset="UTF-8" />
+		<title>Examples - workspace-utils</title>
+
+		<!-- Custom HTML head -->
+
+		<meta
+			name="description"
+			content="A CLI tool to orchestrate scripts across monorepo workspaces with parallel execution and dependency-aware builds"
+		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#ffffff" />
+
+		<link rel="icon" href="favicon.svg" />
+		<link rel="shortcut icon" href="favicon.png" />
+		<link rel="stylesheet" href="css/variables.css" />
+		<link rel="stylesheet" href="css/general.css" />
+		<link rel="stylesheet" href="css/chrome.css" />
+		<link rel="stylesheet" href="css/print.css" media="print" />
+
+		<!-- Fonts -->
+		<link rel="stylesheet" href="FontAwesome/css/font-awesome.css" />
+		<link rel="stylesheet" href="fonts/fonts.css" />
+
+		<!-- Highlight.js Stylesheets -->
+		<link rel="stylesheet" id="highlight-css" href="highlight.css" />
+		<link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css" />
+		<link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css" />
+
+		<!-- Custom theme stylesheets -->
+
+		<!-- Provide site root and default themes to javascript -->
+		<script>
+			const path_to_root = '';
+			const default_light_theme = 'light';
+			const default_dark_theme = 'navy';
+			window.path_to_searchindex_js = 'searchindex.js';
+		</script>
+		<!-- Start loading toc.js asap -->
+		<script src="toc.js"></script>
+	</head>
+	<body>
+		<div id="mdbook-help-container">
+			<div id="mdbook-help-popup">
+				<h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+				<div>
+					<p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+					<p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+					<p>Press <kbd>?</kbd> to show this help</p>
+					<p>Press <kbd>Esc</kbd> to hide this help</p>
+				</div>
+			</div>
+		</div>
+		<div id="body-container">
+			<!-- Work around some values being stored in localStorage wrapped in quotes -->
+			<script>
+				try {
+					let theme = localStorage.getItem('mdbook-theme');
+					let sidebar = localStorage.getItem('mdbook-sidebar');
+
+					if (theme.startsWith('"') && theme.endsWith('"')) {
+						localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+					}
+
+					if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+						localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+					}
+				} catch (e) {}
+			</script>
+
+			<!-- Set the theme before any content is loaded, prevents flash -->
+			<script>
+				const default_theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+					? default_dark_theme
+					: default_light_theme;
+				let theme;
+				try {
+					theme = localStorage.getItem('mdbook-theme');
+				} catch (e) {}
+				if (theme === null || theme === undefined) {
+					theme = default_theme;
+				}
+				const html = document.documentElement;
+				html.classList.remove('light');
+				html.classList.add(theme);
+				html.classList.add('js');
+			</script>
+
+			<input type="checkbox" id="sidebar-toggle-anchor" class="hidden" />
+
+			<!-- Hide / unhide sidebar before it is displayed -->
+			<script>
+				let sidebar = null;
+				const sidebar_toggle = document.getElementById('sidebar-toggle-anchor');
+				if (document.body.clientWidth >= 1080) {
+					try {
+						sidebar = localStorage.getItem('mdbook-sidebar');
+					} catch (e) {}
+					sidebar = sidebar || 'visible';
+				} else {
+					sidebar = 'hidden';
+					sidebar_toggle.checked = false;
+				}
+				if (sidebar === 'visible') {
+					sidebar_toggle.checked = true;
+				} else {
+					html.classList.remove('sidebar-visible');
+				}
+			</script>
+
+			<nav id="sidebar" class="sidebar" aria-label="Table of contents">
+				<!-- populated by js -->
+				<mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+				<noscript>
+					<iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+				</noscript>
+				<div id="sidebar-resize-handle" class="sidebar-resize-handle">
+					<div class="sidebar-resize-indicator"></div>
+				</div>
+			</nav>
+
+			<div id="page-wrapper" class="page-wrapper">
+				<div class="page">
+					<div id="menu-bar-hover-placeholder"></div>
+					<div id="menu-bar" class="menu-bar sticky">
+						<div class="left-buttons">
+							<label
+								id="sidebar-toggle"
+								class="icon-button"
+								for="sidebar-toggle-anchor"
+								title="Toggle Table of Contents"
+								aria-label="Toggle Table of Contents"
+								aria-controls="sidebar"
+							>
+								<i class="fa fa-bars"></i>
+							</label>
+							<button
+								id="theme-toggle"
+								class="icon-button"
+								type="button"
+								title="Change theme"
+								aria-label="Change theme"
+								aria-haspopup="true"
+								aria-expanded="false"
+								aria-controls="theme-list"
+							>
+								<i class="fa fa-paint-brush"></i>
+							</button>
+							<ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+								<li role="none">
+									<button role="menuitem" class="theme" id="default_theme">Auto</button>
+								</li>
+								<li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+							</ul>
+							<button
+								id="search-toggle"
+								class="icon-button"
+								type="button"
+								title="Search (`/`)"
+								aria-label="Toggle Searchbar"
+								aria-expanded="false"
+								aria-keyshortcuts="/ s"
+								aria-controls="searchbar"
+							>
+								<i class="fa fa-search"></i>
+							</button>
+						</div>
+
+						<h1 class="menu-title">workspace-utils</h1>
+
+						<div class="right-buttons">
+							<a href="print.html" title="Print this book" aria-label="Print this book">
+								<i id="print-button" class="fa fa-print"></i>
+							</a>
+							<a
+								href="https://github.com/torstendittmann/workspace-utils"
+								title="Git repository"
+								aria-label="Git repository"
+							>
+								<i id="git-repository-button" class="fa fa-github"></i>
+							</a>
+							<a
+								href="https://github.com/torstendittmann/workspace-utils/edit/main/docs/src/examples.md"
+								title="Suggest an edit"
+								aria-label="Suggest an edit"
+								rel="edit"
+							>
+								<i id="git-edit-button" class="fa fa-edit"></i>
+							</a>
+						</div>
+					</div>
+
+					<div id="search-wrapper" class="hidden">
+						<form id="searchbar-outer" class="searchbar-outer">
+							<div class="search-wrapper">
+								<input
+									type="search"
+									id="searchbar"
+									name="searchbar"
+									placeholder="Search this book ..."
+									aria-controls="searchresults-outer"
+									aria-describedby="searchresults-header"
+								/>
+								<div class="spinner-wrapper">
+									<i class="fa fa-spinner fa-spin"></i>
+								</div>
+							</div>
+						</form>
+						<div id="searchresults-outer" class="searchresults-outer hidden">
+							<div id="searchresults-header" class="searchresults-header"></div>
+							<ul id="searchresults"></ul>
+						</div>
+					</div>
+
+					<!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+					<script>
+						document
+							.getElementById('sidebar-toggle')
+							.setAttribute('aria-expanded', sidebar === 'visible');
+						document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+						Array.from(document.querySelectorAll('#sidebar a')).forEach(function (link) {
+							link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+						});
+					</script>
+
+					<div id="content" class="content">
+						<main>
+							<h1 id="examples"><a class="header" href="#examples">Examples</a></h1>
+							<p>
+								This page provides comprehensive examples of using workspace-utils in real-world
+								scenarios. Each example includes the monorepo structure, commands, and expected
+								output.
+							</p>
+							<h2 id="example-1-full-stack-javascript-application">
+								<a class="header" href="#example-1-full-stack-javascript-application"
+									>Example 1: Full-Stack JavaScript Application</a
+								>
+							</h2>
+							<h3 id="project-structure">
+								<a class="header" href="#project-structure">Project Structure</a>
+							</h3>
+							<pre><code>my-fullstack-app/
+├── package.json (workspaces)
+├── packages/
+│   ├── shared-types/      # TypeScript definitions
+│   ├── ui-components/     # React component library
+│   ├── api-client/        # REST API client
+│   └── utils/             # Shared utilities
+└── apps/
+    ├── web-app/           # Next.js frontend
+    ├── mobile-app/        # React Native
+    └── api-server/        # Express.js backend
+</code></pre>
+							<h3 id="common-workflows">
+								<a class="header" href="#common-workflows">Common Workflows</a>
+							</h3>
+							<h4 id="run-all-tests"><a class="header" href="#run-all-tests">Run All Tests</a></h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test": "wsu run test"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run test
+</code></pre>
+							<p><strong>Output:</strong></p>
+							<pre><code>🚀 Running script "test" across packages...
+
+📦 Found 7 packages
+✅ Running "test" in 6 packages:
+  • packages/shared-types
+  • packages/ui-components
+  • packages/api-client
+  • packages/utils
+  • apps/web-app
+  • apps/api-server
+
+🔧 Package manager: pnpm
+⚡ Execution mode: parallel (concurrency: 4)
+
+[packages/utils] ✅ Completed in 1,200ms
+[packages/shared-types] ✅ Completed in 800ms
+[packages/api-client] ✅ Completed in 2,100ms
+[packages/ui-components] ✅ Completed in 3,400ms
+[apps/api-server] ✅ Completed in 2,800ms
+[apps/web-app] ✅ Completed in 4,200ms
+
+📊 Execution Summary:
+✅ Successful: 6
+⏱️  Total duration: 4,200ms
+</code></pre>
+							<h4 id="build-everything-in-dependency-order">
+								<a class="header" href="#build-everything-in-dependency-order"
+									>Build Everything in Dependency Order</a
+								>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "build": "wsu build"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run build
+</code></pre>
+							<p><strong>Output:</strong></p>
+							<pre><code>🏗️  Building packages in dependency order...
+
+📊 Building dependency graph...
+✅ Build order determined: 4 batches
+
+📋 Build Plan:
+  Batch 1: packages/shared-types, packages/utils
+  Batch 2: packages/ui-components, packages/api-client
+  Batch 3: apps/api-server
+  Batch 4: apps/web-app, apps/mobile-app
+
+🔧 Package manager: pnpm
+⚡ Batch concurrency: 4
+
+🔄 Running batch 1/4 (2 packages)
+[packages/shared-types] ✅ Completed in 1,500ms
+[packages/utils] ✅ Completed in 1,200ms
+
+🔄 Running batch 2/4 (2 packages)
+[packages/ui-components] ✅ Completed in 8,900ms
+[packages/api-client] ✅ Completed in 3,200ms
+
+🔄 Running batch 3/4 (1 packages)
+[apps/api-server] ✅ Completed in 4,100ms
+
+🔄 Running batch 4/4 (2 packages)
+[apps/web-app] ✅ Completed in 12,300ms
+[apps/mobile-app] ✅ Completed in 8,700ms
+
+🎉 All packages built successfully!
+</code></pre>
+							<h4 id="start-development-environment">
+								<a class="header" href="#start-development-environment"
+									>Start Development Environment</a
+								>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "dev": "wsu dev"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run dev
+</code></pre>
+							<p><strong>Output:</strong></p>
+							<pre><code>🚀 Starting development servers with live log streaming...
+
+✅ Starting dev servers for 4 packages:
+  • packages/ui-components
+  • apps/web-app
+  • apps/mobile-app
+  • apps/api-server
+
+🔧 Package manager: pnpm
+⚡ Running 4 dev servers simultaneously
+💡 Tip: Use Ctrl+C to stop all development servers
+
+[packages/ui-components] Storybook running on http://localhost:6006
+[apps/api-server] Server running on http://localhost:4000
+[apps/web-app] Next.js running on http://localhost:3000
+[apps/mobile-app] Expo running on http://localhost:19000
+[apps/web-app] Hot reload enabled
+[packages/ui-components] Hot reload enabled
+[apps/api-server] Watching for changes...
+[apps/mobile-app] Metro bundler started
+...
+</code></pre>
+							<h2 id="example-2-design-system-monorepo">
+								<a class="header" href="#example-2-design-system-monorepo"
+									>Example 2: Design System Monorepo</a
+								>
+							</h2>
+							<h3 id="project-structure-1">
+								<a class="header" href="#project-structure-1">Project Structure</a>
+							</h3>
+							<pre><code>design-system/
+├── packages/
+│   ├── tokens/            # Design tokens
+│   ├── icons/             # Icon library
+│   ├── components/        # React components
+│   ├── themes/            # Theme definitions
+│   └── utils/             # Design utilities
+├── apps/
+│   ├── storybook/         # Component documentation
+│   └── playground/        # Component testing
+└── tools/
+    └── build-tools/       # Custom build scripts
+</code></pre>
+							<h3 id="workflows"><a class="header" href="#workflows">Workflows</a></h3>
+							<h4 id="build-design-system">
+								<a class="header" href="#build-design-system">Build Design System</a>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "build": "wsu build",
+    "build:tokens": "wsu build --filter 'packages/tokens'",
+    "build:icons": "wsu build --filter 'packages/icons'",
+    "test:visual": "wsu run test:visual --concurrency 2",
+    "lint": "wsu run lint --concurrency 8"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run build:tokens  # Build tokens first
+npm run build:icons   # Then icons  
+npm run build         # Then everything else
+npm run test:visual   # Visual regression tests
+npm run lint          # Lint all code
+</code></pre>
+							<h2 id="example-3-microservices-architecture">
+								<a class="header" href="#example-3-microservices-architecture"
+									>Example 3: Microservices Architecture</a
+								>
+							</h2>
+							<h3 id="project-structure-2">
+								<a class="header" href="#project-structure-2">Project Structure</a>
+							</h3>
+							<pre><code>microservices/
+├── shared/
+│   ├── types/             # Shared TypeScript types
+│   ├── configs/           # Shared configurations
+│   └── middleware/        # Common middleware
+├── services/
+│   ├── auth-service/      # Authentication
+│   ├── user-service/      # User management
+│   ├── payment-service/   # Payment processing
+│   ├── notification-service/ # Notifications
+│   └── gateway-service/   # API Gateway
+└── tools/
+    ├── docker-compose/    # Container orchestration
+    └── deployment/        # Deployment scripts
+</code></pre>
+							<h3 id="workflows-1"><a class="header" href="#workflows-1">Workflows</a></h3>
+							<h4 id="service-workflows">
+								<a class="header" href="#service-workflows">Service Workflows</a>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test:services": "wsu run test --filter 'services/*'",
+    "build:shared": "wsu build --filter 'shared/*'",
+    "build:services": "wsu build --filter 'services/*' --sequential",
+    "dev:services": "wsu dev --filter 'services/*' --concurrency 6"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run test:services  # Run tests for all services
+npm run build:shared   # Build shared libraries first
+npm run build:services # Then build all services
+npm run dev:services   # Start local development
+</code></pre>
+							<h2 id="example-4-multi-platform-mobile-app">
+								<a class="header" href="#example-4-multi-platform-mobile-app"
+									>Example 4: Multi-Platform Mobile App</a
+								>
+							</h2>
+							<h3 id="project-structure-3">
+								<a class="header" href="#project-structure-3">Project Structure</a>
+							</h3>
+							<pre><code>mobile-app/
+├── packages/
+│   ├── core/              # Business logic
+│   ├── ui/                # Shared UI components
+│   ├── api/               # API layer
+│   └── utils/             # Utilities
+├── apps/
+│   ├── ios/               # iOS app
+│   ├── android/           # Android app
+│   └── web/               # Web version
+└── tools/
+    ├── build-scripts/     # Platform build tools
+    └── testing/           # Testing utilities
+</code></pre>
+							<h3 id="platform-specific-workflows">
+								<a class="header" href="#platform-specific-workflows"
+									>Platform-Specific Workflows</a
+								>
+							</h3>
+							<h4 id="platform-specific-workflows-1">
+								<a class="header" href="#platform-specific-workflows-1"
+									>Platform-Specific Workflows</a
+								>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "dev:ios": "wsu dev --filter 'apps/ios' --filter 'packages/*'",
+    "dev:android": "wsu dev --filter 'apps/android' --filter 'packages/*'",
+    "test:core": "wsu run test --filter 'packages/*'",
+    "test:ios": "wsu run test:ios --filter 'apps/ios'",
+    "test:android": "wsu run test:android --filter 'apps/android'"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run dev:ios       # iOS development
+npm run dev:android   # Android development
+npm run test:core     # Test core logic
+npm run test:ios      # Test iOS specifically
+npm run test:android  # Test Android specifically
+</code></pre>
+							<h2 id="example-5-enterprise-library-collection">
+								<a class="header" href="#example-5-enterprise-library-collection"
+									>Example 5: Enterprise Library Collection</a
+								>
+							</h2>
+							<h3 id="project-structure-4">
+								<a class="header" href="#project-structure-4">Project Structure</a>
+							</h3>
+							<pre><code>enterprise-libs/
+├── core/
+│   ├── auth/              # Authentication library
+│   ├── logging/           # Logging utilities
+│   ├── validation/        # Data validation
+│   └── storage/           # Storage abstractions
+├── ui/
+│   ├── react-components/  # React component library
+│   ├── vue-components/    # Vue component library
+│   └── angular-components/ # Angular component library
+└── integrations/
+    ├── aws-integration/   # AWS utilities
+    ├── gcp-integration/   # Google Cloud utilities
+    └── azure-integration/ # Azure utilities
+</code></pre>
+							<h3 id="library-publishing-workflow">
+								<a class="header" href="#library-publishing-workflow"
+									>Library Publishing Workflow</a
+								>
+							</h3>
+							<h4 id="library-publishing-workflow-1">
+								<a class="header" href="#library-publishing-workflow-1"
+									>Library Publishing Workflow</a
+								>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test": "wsu run test",
+    "build": "wsu build",
+    "publish": "wsu run publish --sequential",
+    "test:react": "wsu run test --filter '*react*'",
+    "test:vue": "wsu run test --filter '*vue*'",
+    "test:angular": "wsu run test --filter '*angular*'"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run test          # Run all tests first
+npm run build         # Build everything
+npm run publish       # Publish packages
+npm run test:react    # Test React components
+npm run test:vue      # Test Vue components
+npm run test:angular  # Test Angular components
+</code></pre>
+							<h2 id="example-6-documentation-site">
+								<a class="header" href="#example-6-documentation-site"
+									>Example 6: Documentation Site</a
+								>
+							</h2>
+							<h3 id="project-structure-5">
+								<a class="header" href="#project-structure-5">Project Structure</a>
+							</h3>
+							<pre><code>docs-site/
+├── content/
+│   ├── guides/            # User guides
+│   ├── api-docs/          # API documentation
+│   └── examples/          # Code examples
+├── tools/
+│   ├── markdown-processor/ # Custom markdown tools
+│   ├── code-generator/    # Generate code samples
+│   └── link-checker/      # Validate links
+└── sites/
+    ├── main-site/         # Main documentation
+    ├── blog/              # Blog site
+    └── api-reference/     # API reference site
+</code></pre>
+							<h3 id="documentation-workflows">
+								<a class="header" href="#documentation-workflows">Documentation Workflows</a>
+							</h3>
+							<h4 id="documentation-workflows-1">
+								<a class="header" href="#documentation-workflows-1">Documentation Workflows</a>
+							</h4>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "docs:generate": "wsu run generate --filter 'tools/*'",
+    "docs:build": "wsu build --filter 'sites/*'",
+    "docs:dev": "wsu dev --filter 'sites/*'",
+    "docs:validate": "wsu run validate --filter 'tools/link-checker'",
+    "docs:spellcheck": "wsu run spellcheck --sequential"
+  }
+}
+</code></pre>
+							<p>Then run:</p>
+							<pre><code class="language-bash">npm run docs:generate    # Generate content first
+npm run docs:build       # Then build sites
+npm run docs:dev         # Development with live reload
+npm run docs:validate    # Check links and content
+npm run docs:spellcheck  # Spell check
+</code></pre>
+							<h2 id="filtering-patterns-reference">
+								<a class="header" href="#filtering-patterns-reference"
+									>Filtering Patterns Reference</a
+								>
+							</h2>
+							<h3 id="scope-based-filtering">
+								<a class="header" href="#scope-based-filtering">Scope-Based Filtering</a>
+							</h3>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test:company": "wsu run test --filter '@company/*'",
+    "build:internal": "wsu build --filter '@internal/*'"
+  }
+}
+</code></pre>
+							<h3 id="directory-based-filtering">
+								<a class="header" href="#directory-based-filtering">Directory-Based Filtering</a>
+							</h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "dev:apps": "wsu dev --filter 'apps/*'",
+    "lint:packages": "wsu run lint --filter 'packages/*'",
+    "build:tools": "wsu run build --filter 'tools/*'"
+  }
+}
+</code></pre>
+							<h3 id="name-pattern-filtering">
+								<a class="header" href="#name-pattern-filtering">Name Pattern Filtering</a>
+							</h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test:backend": "wsu run test --filter '*backend*'",
+    "dev:frontend": "wsu dev --filter '*frontend*'",
+    "build:utils": "wsu build --filter '*utils*'",
+    "lint:test": "wsu run lint --filter '*test*'"
+  }
+}
+</code></pre>
+							<h3 id="combined-filtering-examples">
+								<a class="header" href="#combined-filtering-examples"
+									>Combined Filtering Examples</a
+								>
+							</h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test:backend-services": "wsu run test --filter 'services/*backend*'",
+    "build:react": "wsu run build --filter '*react*'"
+  }
+}
+</code></pre>
+							<h2 id="packagejson-script-patterns">
+								<a class="header" href="#packagejson-script-patterns"
+									>Package.json Script Patterns</a
+								>
+							</h2>
+							<h3 id="basic-setup"><a class="header" href="#basic-setup">Basic Setup</a></h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test": "wsu run test",
+    "build": "wsu build", 
+    "dev": "wsu dev",
+    "lint": "wsu run lint"
+  }
+}
+</code></pre>
+							<h3 id="advanced-patterns">
+								<a class="header" href="#advanced-patterns">Advanced Patterns</a>
+							</h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test": "wsu run test",
+    "test:watch": "wsu run test:watch",
+    "test:coverage": "wsu run test:coverage",
+    "build": "wsu build",
+    "build:prod": "wsu build --concurrency 2",
+    "dev": "wsu dev",
+    "dev:apps": "wsu dev --filter 'apps/*'",
+    "lint": "wsu run lint --concurrency 8",
+    "lint:fix": "wsu run lint:fix",
+    "typecheck": "wsu run typecheck",
+    "clean": "wsu run clean --sequential"
+  }
+}
+</code></pre>
+							<h2 id="performance-optimization-examples">
+								<a class="header" href="#performance-optimization-examples"
+									>Performance Optimization Examples</a
+								>
+							</h2>
+							<h3 id="resource-constrained-environments">
+								<a class="header" href="#resource-constrained-environments"
+									>Resource-Constrained Environments</a
+								>
+							</h3>
+							<p>Add to your <code>package.json</code>:</p>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test:ci": "wsu run test --concurrency 1",
+    "build:low-mem": "wsu build --concurrency 2",
+    "lint:fast": "wsu run lint --concurrency 12"
+  }
+}
+</code></pre>
+							<h3 id="high-performance-development">
+								<a class="header" href="#high-performance-development"
+									>High-Performance Development</a
+								>
+							</h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test:fast": "wsu run test --concurrency 8",
+    "build:fast": "wsu build --concurrency 6",
+    "typecheck:fast": "wsu run typecheck --concurrency 16"
+  }
+}
+</code></pre>
+							<h2 id="troubleshooting-common-scenarios">
+								<a class="header" href="#troubleshooting-common-scenarios"
+									>Troubleshooting Common Scenarios</a
+								>
+							</h2>
+							<h3 id="mixed-package-managers">
+								<a class="header" href="#mixed-package-managers">Mixed Package Managers</a>
+							</h3>
+							<p>If your monorepo accidentally has mixed lock files:</p>
+							<pre><code class="language-bash"># This will fail with clear error message
+npm run test
+
+# Clean up mixed lock files first
+rm -f package-lock.json yarn.lock  # Keep only pnpm-lock.yaml
+npm run test  # Now works
+</code></pre>
+							<h3 id="missing-scripts">
+								<a class="header" href="#missing-scripts">Missing Scripts</a>
+							</h3>
+							<p>If some packages don't have the script you're trying to run:</p>
+							<pre><code class="language-bash"># This automatically skips packages without 'storybook' script
+npm run storybook
+
+# Output shows which packages were skipped
+# ⚠️  Skipped 3 packages without 'storybook' script
+</code></pre>
+							<h3 id="build-dependencies">
+								<a class="header" href="#build-dependencies">Build Dependencies</a>
+							</h3>
+							<p>If builds fail due to missing dependencies:</p>
+							<pre><code class="language-bash"># Use build command instead of run for dependency-aware building
+npm run build  # ✅ Builds in correct order
+
+# Instead of this which might fail
+npm run build:parallel  # ❌ Might fail due to missing dependencies
+</code></pre>
+							<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+							<ul>
+								<li>
+									Explore <a href="./commands/overview.html">Command Reference</a> for detailed
+									options
+								</li>
+								<li>
+									Learn about <a href="./troubleshooting.html">Troubleshooting</a> common issues
+								</li>
+								<li>
+									See <a href="./advanced/patterns.html">Advanced Usage</a> for complex scenarios
+								</li>
+							</ul>
+						</main>
+
+						<nav class="nav-wrapper" aria-label="Page navigation">
+							<!-- Mobile navigation buttons -->
+							<a
+								rel="prev"
+								href="commands/dev.html"
+								class="mobile-nav-chapters previous"
+								title="Previous chapter"
+								aria-label="Previous chapter"
+								aria-keyshortcuts="Left"
+							>
+								<i class="fa fa-angle-left"></i>
+							</a>
+
+							<a
+								rel="next prefetch"
+								href="troubleshooting.html"
+								class="mobile-nav-chapters next"
+								title="Next chapter"
+								aria-label="Next chapter"
+								aria-keyshortcuts="Right"
+							>
+								<i class="fa fa-angle-right"></i>
+							</a>
+
+							<div style="clear: both"></div>
+						</nav>
+					</div>
+				</div>
+
+				<nav class="nav-wide-wrapper" aria-label="Page navigation">
+					<a
+						rel="prev"
+						href="commands/dev.html"
+						class="nav-chapters previous"
+						title="Previous chapter"
+						aria-label="Previous chapter"
+						aria-keyshortcuts="Left"
+					>
+						<i class="fa fa-angle-left"></i>
+					</a>
+
+					<a
+						rel="next prefetch"
+						href="troubleshooting.html"
+						class="nav-chapters next"
+						title="Next chapter"
+						aria-label="Next chapter"
+						aria-keyshortcuts="Right"
+					>
+						<i class="fa fa-angle-right"></i>
+					</a>
+				</nav>
+			</div>
+
+			<!-- Livereload script (if served using the cli tool) -->
+			<script>
+				const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+				const wsAddress = wsProtocol + '//' + location.host + '/' + '__livereload';
+				const socket = new WebSocket(wsAddress);
+				socket.onmessage = function (event) {
+					if (event.data === 'reload') {
+						socket.close();
+						location.reload();
+					}
+				};
+
+				window.onbeforeunload = function () {
+					socket.close();
+				};
+			</script>
+
+			<script>
+				window.playground_copyable = true;
+			</script>
+
+			<script src="elasticlunr.min.js"></script>
+			<script src="mark.min.js"></script>
+			<script src="searcher.js"></script>
+
+			<script src="clipboard.min.js"></script>
+			<script src="highlight.js"></script>
+			<script src="book.js"></script>
+
+			<!-- Custom JS scripts -->
+		</div>
+	</body>
+</html>

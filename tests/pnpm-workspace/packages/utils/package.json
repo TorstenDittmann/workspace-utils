@@ -1,0 +1,15 @@
+{
+	"name": "@test-pnpm/utils",
+	"version": "1.0.0",
+	"description": "Utility functions package",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "echo 'Building utils with pnpm...' && sleep 2 && echo 'utils build complete!'",
+		"dev": "echo 'Starting utils dev server with pnpm...' && while true; do echo '[utils] Dev server running...'; sleep 5; done",
+		"test": "echo 'Running utils tests with pnpm...' && sleep 1 && echo 'utils tests passed!'",
+		"lint": "echo 'Linting utils with pnpm...' && sleep 1 && echo 'utils linting complete!'"
+	},
+	"dependencies": {},
+	"devDependencies": {}
+}

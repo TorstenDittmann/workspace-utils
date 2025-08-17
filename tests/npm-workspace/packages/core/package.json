@@ -1,0 +1,15 @@
+{
+	"name": "@test-npm/core",
+	"version": "1.0.0",
+	"description": "Core package for npm workspace",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "echo 'Building core with npm...' && sleep 2 && echo 'core build complete!'",
+		"dev": "echo 'Starting core dev server with npm...' && while true; do echo '[core] Dev server running...'; sleep 5; done",
+		"test": "echo 'Running core tests with npm...' && sleep 1 && echo 'core tests passed!'",
+		"lint": "echo 'Linting core with npm...' && sleep 1 && echo 'core linting complete!'"
+	},
+	"dependencies": {},
+	"devDependencies": {}
+}

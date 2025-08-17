@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+	<head>
+		<!-- Book generated using mdBook -->
+		<meta charset="UTF-8" />
+		<title>Introduction - workspace-utils</title>
+
+		<!-- Custom HTML head -->
+
+		<meta
+			name="description"
+			content="A CLI tool to orchestrate scripts across monorepo workspaces with parallel execution and dependency-aware builds"
+		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#ffffff" />
+
+		<link rel="icon" href="favicon.svg" />
+		<link rel="shortcut icon" href="favicon.png" />
+		<link rel="stylesheet" href="css/variables.css" />
+		<link rel="stylesheet" href="css/general.css" />
+		<link rel="stylesheet" href="css/chrome.css" />
+		<link rel="stylesheet" href="css/print.css" media="print" />
+
+		<!-- Fonts -->
+		<link rel="stylesheet" href="FontAwesome/css/font-awesome.css" />
+		<link rel="stylesheet" href="fonts/fonts.css" />
+
+		<!-- Highlight.js Stylesheets -->
+		<link rel="stylesheet" id="highlight-css" href="highlight.css" />
+		<link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css" />
+		<link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css" />
+
+		<!-- Custom theme stylesheets -->
+
+		<!-- Provide site root and default themes to javascript -->
+		<script>
+			const path_to_root = '';
+			const default_light_theme = 'light';
+			const default_dark_theme = 'navy';
+			window.path_to_searchindex_js = 'searchindex.js';
+		</script>
+		<!-- Start loading toc.js asap -->
+		<script src="toc.js"></script>
+	</head>
+	<body>
+		<div id="mdbook-help-container">
+			<div id="mdbook-help-popup">
+				<h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+				<div>
+					<p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+					<p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+					<p>Press <kbd>?</kbd> to show this help</p>
+					<p>Press <kbd>Esc</kbd> to hide this help</p>
+				</div>
+			</div>
+		</div>
+		<div id="body-container">
+			<!-- Work around some values being stored in localStorage wrapped in quotes -->
+			<script>
+				try {
+					let theme = localStorage.getItem('mdbook-theme');
+					let sidebar = localStorage.getItem('mdbook-sidebar');
+
+					if (theme.startsWith('"') && theme.endsWith('"')) {
+						localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+					}
+
+					if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+						localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+					}
+				} catch (e) {}
+			</script>
+
+			<!-- Set the theme before any content is loaded, prevents flash -->
+			<script>
+				const default_theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+					? default_dark_theme
+					: default_light_theme;
+				let theme;
+				try {
+					theme = localStorage.getItem('mdbook-theme');
+				} catch (e) {}
+				if (theme === null || theme === undefined) {
+					theme = default_theme;
+				}
+				const html = document.documentElement;
+				html.classList.remove('light');
+				html.classList.add(theme);
+				html.classList.add('js');
+			</script>
+
+			<input type="checkbox" id="sidebar-toggle-anchor" class="hidden" />
+
+			<!-- Hide / unhide sidebar before it is displayed -->
+			<script>
+				let sidebar = null;
+				const sidebar_toggle = document.getElementById('sidebar-toggle-anchor');
+				if (document.body.clientWidth >= 1080) {
+					try {
+						sidebar = localStorage.getItem('mdbook-sidebar');
+					} catch (e) {}
+					sidebar = sidebar || 'visible';
+				} else {
+					sidebar = 'hidden';
+					sidebar_toggle.checked = false;
+				}
+				if (sidebar === 'visible') {
+					sidebar_toggle.checked = true;
+				} else {
+					html.classList.remove('sidebar-visible');
+				}
+			</script>
+
+			<nav id="sidebar" class="sidebar" aria-label="Table of contents">
+				<!-- populated by js -->
+				<mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+				<noscript>
+					<iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+				</noscript>
+				<div id="sidebar-resize-handle" class="sidebar-resize-handle">
+					<div class="sidebar-resize-indicator"></div>
+				</div>
+			</nav>
+
+			<div id="page-wrapper" class="page-wrapper">
+				<div class="page">
+					<div id="menu-bar-hover-placeholder"></div>
+					<div id="menu-bar" class="menu-bar sticky">
+						<div class="left-buttons">
+							<label
+								id="sidebar-toggle"
+								class="icon-button"
+								for="sidebar-toggle-anchor"
+								title="Toggle Table of Contents"
+								aria-label="Toggle Table of Contents"
+								aria-controls="sidebar"
+							>
+								<i class="fa fa-bars"></i>
+							</label>
+							<button
+								id="theme-toggle"
+								class="icon-button"
+								type="button"
+								title="Change theme"
+								aria-label="Change theme"
+								aria-haspopup="true"
+								aria-expanded="false"
+								aria-controls="theme-list"
+							>
+								<i class="fa fa-paint-brush"></i>
+							</button>
+							<ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+								<li role="none">
+									<button role="menuitem" class="theme" id="default_theme">Auto</button>
+								</li>
+								<li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+								<li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+							</ul>
+							<button
+								id="search-toggle"
+								class="icon-button"
+								type="button"
+								title="Search (`/`)"
+								aria-label="Toggle Searchbar"
+								aria-expanded="false"
+								aria-keyshortcuts="/ s"
+								aria-controls="searchbar"
+							>
+								<i class="fa fa-search"></i>
+							</button>
+						</div>
+
+						<h1 class="menu-title">workspace-utils</h1>
+
+						<div class="right-buttons">
+							<a href="print.html" title="Print this book" aria-label="Print this book">
+								<i id="print-button" class="fa fa-print"></i>
+							</a>
+							<a
+								href="https://github.com/torstendittmann/workspace-utils"
+								title="Git repository"
+								aria-label="Git repository"
+							>
+								<i id="git-repository-button" class="fa fa-github"></i>
+							</a>
+							<a
+								href="https://github.com/torstendittmann/workspace-utils/edit/main/docs/src/introduction.md"
+								title="Suggest an edit"
+								aria-label="Suggest an edit"
+								rel="edit"
+							>
+								<i id="git-edit-button" class="fa fa-edit"></i>
+							</a>
+						</div>
+					</div>
+
+					<div id="search-wrapper" class="hidden">
+						<form id="searchbar-outer" class="searchbar-outer">
+							<div class="search-wrapper">
+								<input
+									type="search"
+									id="searchbar"
+									name="searchbar"
+									placeholder="Search this book ..."
+									aria-controls="searchresults-outer"
+									aria-describedby="searchresults-header"
+								/>
+								<div class="spinner-wrapper">
+									<i class="fa fa-spinner fa-spin"></i>
+								</div>
+							</div>
+						</form>
+						<div id="searchresults-outer" class="searchresults-outer hidden">
+							<div id="searchresults-header" class="searchresults-header"></div>
+							<ul id="searchresults"></ul>
+						</div>
+					</div>
+
+					<!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+					<script>
+						document
+							.getElementById('sidebar-toggle')
+							.setAttribute('aria-expanded', sidebar === 'visible');
+						document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+						Array.from(document.querySelectorAll('#sidebar a')).forEach(function (link) {
+							link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+						});
+					</script>
+
+					<div id="content" class="content">
+						<main>
+							<h1 id="workspace-utils">
+								<a class="header" href="#workspace-utils">workspace-utils</a>
+							</h1>
+							<p>
+								A powerful <strong>CLI tool</strong> designed to orchestrate scripts across monorepo
+								workspaces with <strong>parallel execution</strong>,
+								<strong>dependency-aware builds</strong>, and
+								<strong>real-time log streaming</strong>.
+							</p>
+							<h2 id="what-is-workspace-utils">
+								<a class="header" href="#what-is-workspace-utils">What is workspace-utils?</a>
+							</h2>
+							<p>
+								<code>workspace-utils</code> simplifies working with monorepos by providing
+								intelligent script orchestration across multiple packages. Whether you're using
+								<strong>Bun</strong>, <strong>pnpm</strong>, or <strong>npm</strong> workspaces,
+								this tool automatically detects your setup and provides a unified interface for
+								running scripts efficiently.
+							</p>
+							<h2 id="key-features"><a class="header" href="#key-features">Key Features</a></h2>
+							<h3 id="-parallel-execution-by-default">
+								<a class="header" href="#-parallel-execution-by-default"
+									>🚀 <strong>Parallel Execution by Default</strong></a
+								>
+							</h3>
+							<p>
+								Run scripts across multiple packages simultaneously with configurable concurrency
+								limits. Perfect for tests, linting, and development workflows.
+							</p>
+							<h3 id="-dependency-aware-builds">
+								<a class="header" href="#-dependency-aware-builds"
+									>🏗️ <strong>Dependency-Aware Builds</strong></a
+								>
+							</h3>
+							<p>
+								Automatically builds packages in the correct order using topological sorting.
+								Dependencies are always built before their dependents.
+							</p>
+							<h3 id="-real-time-log-streaming">
+								<a class="header" href="#-real-time-log-streaming"
+									>🎨 <strong>Real-time Log Streaming</strong></a
+								>
+							</h3>
+							<p>
+								Color-coded, prefixed output makes it easy to track which package is doing what.
+								Each package gets its own color for instant identification.
+							</p>
+							<h3 id="-smart-package-filtering">
+								<a class="header" href="#-smart-package-filtering"
+									>🔍 <strong>Smart Package Filtering</strong></a
+								>
+							</h3>
+							<p>Use glob patterns to target specific packages:</p>
+							<ul>
+								<li><code>--filter "@scope/*"</code> - All packages in a scope</li>
+								<li><code>--filter "apps/*"</code> - All apps</li>
+								<li><code>--filter "*-utils"</code> - All utility packages</li>
+							</ul>
+							<h3 id="-multi-package-manager-support">
+								<a class="header" href="#-multi-package-manager-support"
+									>📦 <strong>Multi Package Manager Support</strong></a
+								>
+							</h3>
+							<p>Works seamlessly with:</p>
+							<ul>
+								<li>
+									<strong>Bun workspaces</strong> (<code>package.json</code> +
+									<code>bun.lockb</code>)
+								</li>
+								<li>
+									<strong>pnpm workspaces</strong> (<code>pnpm-workspace.yaml</code> +
+									<code>pnpm-lock.yaml</code>)
+								</li>
+								<li>
+									<strong>npm workspaces</strong> (<code>package.json</code> +
+									<code>package-lock.json</code>)
+								</li>
+							</ul>
+							<h3 id="-zero-configuration">
+								<a class="header" href="#-zero-configuration"
+									>🎯 <strong>Zero Configuration</strong></a
+								>
+							</h3>
+							<p>
+								No config files needed. Just run it in any workspace and it automatically detects
+								your setup.
+							</p>
+							<h2 id="why-workspace-utils">
+								<a class="header" href="#why-workspace-utils">Why workspace-utils?</a>
+							</h2>
+							<h3 id="before-workspace-utils">
+								<a class="header" href="#before-workspace-utils">Before workspace-utils</a>
+							</h3>
+							<pre><code class="language-bash"># Run tests manually in each package
+cd packages/utils &amp;&amp; npm test
+cd ../ui-components &amp;&amp; npm test  
+cd ../api-client &amp;&amp; npm test
+cd ../../apps/web-app &amp;&amp; npm test
+
+# Build in correct order manually
+cd packages/utils &amp;&amp; npm run build
+cd ../ui-components &amp;&amp; npm run build  # depends on utils
+cd ../api-client &amp;&amp; npm run build     # depends on utils
+cd ../../apps/web-app &amp;&amp; npm run build # depends on ui-components &amp; api-client
+</code></pre>
+							<h3 id="after-workspace-utils">
+								<a class="header" href="#after-workspace-utils">After workspace-utils</a>
+							</h3>
+							<pre><code class="language-json">{
+  "scripts": {
+    "test": "wsu run test",
+    "build": "wsu build",
+    "dev": "wsu dev"
+  }
+}
+</code></pre>
+							<pre><code class="language-bash"># Run all tests in parallel
+npm run test
+
+# Build everything in correct dependency order
+npm run build
+
+# Start all dev servers with live logs
+npm run dev
+</code></pre>
+							<h2 id="at-a-glance"><a class="header" href="#at-a-glance">At a Glance</a></h2>
+							<div class="table-wrapper">
+								<table>
+									<thead>
+										<tr>
+											<th>Package.json Script</th>
+											<th>Purpose</th>
+											<th>Execution</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td><code>"test": "wsu run test"</code></td>
+											<td>Run tests across packages</td>
+											<td><strong>Parallel</strong> by default</td>
+										</tr>
+										<tr>
+											<td><code>"build": "wsu build"</code></td>
+											<td>Build packages</td>
+											<td><strong>Dependency order</strong> (batched)</td>
+										</tr>
+										<tr>
+											<td><code>"dev": "wsu dev"</code></td>
+											<td>Start dev servers</td>
+											<td><strong>Parallel</strong> with live logs</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<h2 id="quick-example"><a class="header" href="#quick-example">Quick Example</a></h2>
+							<p>Given this monorepo structure:</p>
+							<pre><code>my-project/
+├── package.json (workspaces: ["packages/*", "apps/*"])
+├── packages/
+│   ├── utils/           # no dependencies
+│   ├── ui-components/   # depends on utils
+│   └── api-client/      # depends on utils
+└── apps/
+    └── web-app/         # depends on ui-components, api-client
+</code></pre>
+							<p>
+								Running <code>npm run build</code> (with <code>"build": "wsu build"</code> in
+								package.json) will:
+							</p>
+							<ol>
+								<li><strong>Batch 1:</strong> Build <code>utils</code></li>
+								<li>
+									<strong>Batch 2:</strong> Build <code>ui-components</code> and
+									<code>api-client</code> in parallel
+								</li>
+								<li><strong>Batch 3:</strong> Build <code>web-app</code></li>
+							</ol>
+							<p>
+								Running <code>npm run test</code> (with <code>"test": "wsu run test"</code> in
+								package.json) will run all tests in parallel across all packages simultaneously.
+							</p>
+							<h2 id="ready-to-get-started">
+								<a class="header" href="#ready-to-get-started">Ready to Get Started?</a>
+							</h2>
+							<p>
+								Continue to <a href="./installation.html">Installation</a> to set up workspace-utils
+								in your project.
+							</p>
+						</main>
+
+						<nav class="nav-wrapper" aria-label="Page navigation">
+							<!-- Mobile navigation buttons -->
+
+							<a
+								rel="next prefetch"
+								href="installation.html"
+								class="mobile-nav-chapters next"
+								title="Next chapter"
+								aria-label="Next chapter"
+								aria-keyshortcuts="Right"
+							>
+								<i class="fa fa-angle-right"></i>
+							</a>
+
+							<div style="clear: both"></div>
+						</nav>
+					</div>
+				</div>
+
+				<nav class="nav-wide-wrapper" aria-label="Page navigation">
+					<a
+						rel="next prefetch"
+						href="installation.html"
+						class="nav-chapters next"
+						title="Next chapter"
+						aria-label="Next chapter"
+						aria-keyshortcuts="Right"
+					>
+						<i class="fa fa-angle-right"></i>
+					</a>
+				</nav>
+			</div>
+
+			<!-- Livereload script (if served using the cli tool) -->
+			<script>
+				const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+				const wsAddress = wsProtocol + '//' + location.host + '/' + '__livereload';
+				const socket = new WebSocket(wsAddress);
+				socket.onmessage = function (event) {
+					if (event.data === 'reload') {
+						socket.close();
+						location.reload();
+					}
+				};
+
+				window.onbeforeunload = function () {
+					socket.close();
+				};
+			</script>
+
+			<script>
+				window.playground_copyable = true;
+			</script>
+
+			<script src="elasticlunr.min.js"></script>
+			<script src="mark.min.js"></script>
+			<script src="searcher.js"></script>
+
+			<script src="clipboard.min.js"></script>
+			<script src="highlight.js"></script>
+			<script src="book.js"></script>
+
+			<!-- Custom JS scripts -->
+		</div>
+	</body>
+</html>

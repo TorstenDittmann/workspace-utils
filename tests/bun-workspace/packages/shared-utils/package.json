@@ -1,0 +1,15 @@
+{
+	"name": "@test/shared-utils",
+	"version": "1.0.0",
+	"description": "Shared utilities package",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "echo 'Building shared-utils with Bun...' && sleep 2 && echo 'shared-utils build complete!'",
+		"dev": "echo 'Starting shared-utils dev server with Bun...' && while true; do echo '[shared-utils] Dev server running...'; sleep 5; done",
+		"test": "echo 'Running shared-utils tests with Bun...' && sleep 1 && echo 'shared-utils tests passed!'",
+		"lint": "echo 'Linting shared-utils with Bun...' && sleep 1 && echo 'shared-utils linting complete!'"
+	},
+	"dependencies": {},
+	"devDependencies": {}
+}

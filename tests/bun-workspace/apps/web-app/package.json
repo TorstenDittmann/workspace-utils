@@ -1,0 +1,18 @@
+{
+	"name": "@test/web-app",
+	"version": "1.0.0",
+	"description": "Web application",
+	"main": "src/index.js",
+	"scripts": {
+		"build": "echo 'Building web-app with Bun...' && sleep 4 && echo 'web-app build complete!'",
+		"dev": "echo 'Starting web-app dev server with Bun...' && while true; do echo '[web-app] Dev server running on port 3000...'; sleep 3; done",
+		"test": "echo 'Running web-app tests with Bun...' && sleep 2 && echo 'web-app tests passed!'",
+		"lint": "echo 'Linting web-app with Bun...' && sleep 1 && echo 'web-app linting complete!'",
+		"start": "echo 'Starting web-app production server with Bun...' && echo 'web-app running on port 3000'"
+	},
+	"dependencies": {
+		"@test/shared-utils": "workspace:*",
+		"@test/ui-components": "workspace:*"
+	},
+	"devDependencies": {}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "@test/ui-components",
+	"version": "1.0.0",
+	"description": "UI components library",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "echo 'Building ui-components with Bun...' && sleep 3 && echo 'ui-components build complete!'",
+		"dev": "echo 'Starting ui-components dev server with Bun...' && while true; do echo '[ui-components] Dev server running...'; sleep 4; done",
+		"test": "echo 'Running ui-components tests with Bun...' && sleep 2 && echo 'ui-components tests passed!'",
+		"lint": "echo 'Linting ui-components with Bun...' && sleep 1 && echo 'ui-components linting complete!'"
+	},
+	"dependencies": {
+		"@test/shared-utils": "workspace:*"
+	},
+	"devDependencies": {}
+}

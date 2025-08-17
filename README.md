@@ -1,6 +1,6 @@
-# 📦 bunmono
+# 📦 workspace-utils
 
-A **Bun-powered CLI tool** for orchestrating scripts across **Bun workspaces** with parallel execution, dependency-aware builds, and real-time log streaming.
+A **universal CLI tool** for orchestrating scripts across **monorepo workspaces** (Bun, pnpm, npm) with parallel execution, dependency-aware builds, and real-time log streaming.
 
 ## ✨ Features
 
@@ -11,33 +11,51 @@ A **Bun-powered CLI tool** for orchestrating scripts across **Bun workspaces** w
 - ⚡ **Configurable concurrency** limits
 - 🏗️ **Smart build ordering** respecting package dependencies
 - 📺 **Real-time log streaming** with timestamps
-- 🎯 **Zero configuration** - works with any Bun workspace
-- 🟡 **Bun native** - designed specifically for Bun workspaces
+- 🎯 **Zero configuration** - works with any workspace setup
+- 🌐 **Universal support** - works with Bun, pnpm, and npm workspaces
 
 ## 🛠️ Installation
 
 ```bash
-# Install globally
-bun install -g bunmono
+# Install as dev dependency with npm
+npm install --save-dev workspace-utils
 
-# Or use with bunx
-bunx bunmono
+# Install as dev dependency with pnpm
+pnpm add -D workspace-utils
+
+# Install as dev dependency with bun
+bun add -d workspace-utils
 ```
 
 ## 🚀 Quick Start
 
+First, add workspace-utils scripts to your root `package.json`:
+
+```json
+{
+	"scripts": {
+		"dev": "wsu dev",
+		"build": "wsu build",
+		"test": "wsu run test",
+		"lint": "wsu run lint --filter '@myorg/*'"
+	}
+}
+```
+
+Then run them:
+
 ```bash
 # Run tests across all packages (parallel by default)
-bunmono run test
+npm run test
 
 # Build packages in dependency order
-bunmono build
+npm run build
 
 # Start all dev servers with live logs
-bunmono dev
+npm run dev
 
 # Run linting on specific packages
-bunmono run lint --filter "@myorg/*"
+npm run lint
 ```
 
 ## 📖 Commands
@@ -47,7 +65,18 @@ bunmono run lint --filter "@myorg/*"
 Run a script across multiple packages with support for parallel or sequential execution.
 
 ```bash
-bunmono run <script> [options]
+wsu run <script> [options]
+```
+
+Add to your `package.json` scripts and run with your package manager:
+
+```json
+{
+	"scripts": {
+		"test": "wsu run test",
+		"test:sequential": "wsu run test --sequential"
+	}
+}
 ```
 
 **Options:**
@@ -60,16 +89,29 @@ bunmono run <script> [options]
 
 ```bash
 # Run tests across all packages (parallel by default)
-bunmono run test
+npm run test
 
 # Run build sequentially
-bunmono run build --sequential
+npm run test:sequential
 
 # Run dev only for frontend packages (parallel by default)
-bunmono run dev --filter "@myorg/frontend-*"
+npm run dev:frontend
 
 # Run with custom concurrency
-bunmono run lint --concurrency 8
+npm run lint
+```
+
+Example `package.json` scripts:
+
+```json
+{
+	"scripts": {
+		"test": "wsu run test",
+		"test:sequential": "wsu run test --sequential",
+		"dev:frontend": "wsu run dev --filter '@myorg/frontend-*'",
+		"lint": "wsu run lint --concurrency 8"
+	}
+}
 ```
 
 ### `build`
@@ -77,7 +119,7 @@ bunmono run lint --concurrency 8
 Build packages in dependency order, ensuring dependencies are built before dependents.
 
 ```bash
-bunmono build [options]
+wsu build [options]
 ```
 
 **Options:**
@@ -90,13 +132,25 @@ bunmono build [options]
 
 ```bash
 # Build all packages in dependency order
-bunmono build
+npm run build
 
 # Build only specific scope
-bunmono build --filter "@myorg/backend-*"
+npm run build:backend
 
 # Build with higher concurrency per batch
-bunmono build --concurrency 8
+npm run build:fast
+```
+
+Example `package.json` scripts:
+
+```json
+{
+	"scripts": {
+		"build": "wsu build",
+		"build:backend": "wsu build --filter '@myorg/backend-*'",
+		"build:fast": "wsu build --concurrency 8"
+	}
+}
 ```
 
 ### `dev`
@@ -104,7 +158,7 @@ bunmono build --concurrency 8
 Start development servers with live log streaming and graceful shutdown.
 
 ```bash
-bunmono dev [options]
+wsu dev [options]
 ```
 
 **Options:**
@@ -116,38 +170,60 @@ bunmono dev [options]
 
 ```bash
 # Start all dev servers
-bunmono dev
+npm run dev
 
 # Start only frontend dev servers
-bunmono dev --filter "apps/*"
+npm run dev:apps
 
 # Limit concurrent dev servers
-bunmono dev --concurrency 2
+npm run dev:limited
+```
+
+Example `package.json` scripts:
+
+```json
+{
+	"scripts": {
+		"dev": "wsu dev",
+		"dev:apps": "wsu dev --filter 'apps/*'",
+		"dev:limited": "wsu dev --concurrency 2"
+	}
+}
 ```
 
 ## 🔍 Package Filtering
 
 Use glob patterns to target specific packages:
 
+```json
+{
+	"scripts": {
+		"test:scope": "wsu run test --filter '@myorg/*'",
+		"build:backend": "wsu build --filter '@myorg/backend-*'",
+		"dev:apps": "wsu dev --filter 'apps/*'",
+		"lint:packages": "wsu run lint --filter 'packages/*'",
+		"test:utils": "wsu run test --filter '*-utils' --sequential",
+		"build:frontend": "wsu run build --filter '*frontend*'"
+	}
+}
+```
+
+Then run with:
+
 ```bash
-# Scope-based filtering (runs in parallel by default)
-bunmono run test --filter "@myorg/*"
-bunmono run build --filter "@myorg/backend-*"
-
-# Path-based filtering
-bunmono run dev --filter "apps/*"
-bunmono run lint --filter "packages/*"
-
-# Name-based filtering with sequential execution
-bunmono run test --filter "*-utils" --sequential
-bunmono run build --filter "*frontend*"
+npm run test:scope     # Scope-based filtering
+npm run build:backend  # Build backend packages
+npm run dev:apps       # Start app dev servers
+npm run lint:packages  # Lint package directories
+npm run test:utils     # Test utilities sequentially
+npm run build:frontend # Build frontend packages
 ```
 
 ## 📊 Dependency Management
 
 The tool automatically:
 
-1. **Parses your workspace** from `package.json` workspaces
+1. **Parses your workspace** from `package.json` workspaces or `pnpm-workspace.yaml`
 2. **Builds a dependency graph** from `package.json` files
 3. **Calculates build order** using topological sorting
 4. **Detects circular dependencies** and reports them
@@ -177,7 +253,7 @@ Build order will be:
 Logs are color-coded and prefixed for easy identification:
 
 ```
-[shared-utils] Building shared utilities with Bun...
+[shared-utils] Building shared utilities...
 [ui-components] Starting component library build...
 [web-app] Compiling application...
 [shared-utils] ✅ Completed in 1,234ms
@@ -187,9 +263,9 @@ Logs are color-coded and prefixed for easy identification:
 
 ## 📁 Workspace Requirements
 
-Your project must have a `package.json` with `workspaces` field at the root.
+Your project must have one of the following workspace configurations:
 
-### Example workspace `package.json`:
+### npm/Bun workspaces (`package.json`):
 
 ```json
 {
@@ -197,21 +273,29 @@ Your project must have a `package.json` with `workspaces` field at the root.
 	"private": true,
 	"workspaces": ["packages/*", "apps/*"],
 	"scripts": {
-		"build": "bunmono build",
-		"dev": "bunmono dev",
-		"test": "bunmono run test"
+		"build": "wsu build",
+		"dev": "wsu dev",
+		"test": "wsu run test"
 	}
 }
 ```
 
-## 🟡 Why Bun?
+### pnpm workspaces (`pnpm-workspace.yaml`):
 
-This tool is specifically designed for **Bun workspaces** because:
+```yaml
+packages:
+  - 'packages/*'
+  - 'apps/*'
+```
 
-- **Native performance** - Built with Bun for maximum speed
-- **Simple workspace config** - Uses standard `package.json` workspaces
-- **Modern tooling** - Leverages Bun's fast package manager and runtime
-- **Developer experience** - Seamless integration with Bun's ecosystem
+## 🌐 Package Manager Support
+
+This tool works seamlessly with:
+
+- **npm workspaces** - Uses standard `package.json` workspaces
+- **pnpm workspaces** - Supports `pnpm-workspace.yaml` configuration
+- **Bun workspaces** - Works with Bun's workspace implementation
+- **Auto-detection** - Automatically detects your package manager and workspace setup
 
 ## ⚡ Performance Tips
 
@@ -226,7 +310,10 @@ This tool is specifically designed for **Bun workspaces** because:
 
 ### "No workspaces configuration found"
 
-Ensure your root `package.json` has a `workspaces` field with package patterns.
+Ensure your project has one of the following:
+
+- Root `package.json` with a `workspaces` field
+- `pnpm-workspace.yaml` file with package patterns
 
 ### "Circular dependencies detected"
 
@@ -234,7 +321,7 @@ Check your package dependencies for circular references:
 
 ```bash
 # This will show the circular dependency chain
-bunmono build
+npm run build
 ```
 
 ### "No packages found with script"
@@ -243,7 +330,7 @@ Verify your packages have the required script in their `package.json`:
 
 ```bash
 # Check which packages have the script
-bunmono run nonexistent-script
+npx wsu run nonexistent-script
 ```
 
 ## 🛣️ Roadmap
@@ -253,7 +340,8 @@ bunmono run nonexistent-script
 - [ ] **Interactive mode** - Focus on specific package logs
 - [ ] **Custom log formatters** - Configurable output styles
 - [ ] **Dry run mode** - Preview execution plan
-- [ ] **Bun-specific optimizations** - Leverage Bun features for better performance
+- [ ] **Yarn workspaces support** - Add support for Yarn workspaces
+- [ ] **Lerna integration** - Better compatibility with Lerna projects
 
 ## 🤝 Contributing
 
@@ -269,10 +357,10 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- Built with [Bun](https://bun.sh) for blazing fast performance
-- Inspired by the need for better Bun workspace tooling
-- Thanks to the Bun team for creating an excellent runtime and package manager
+- Built for the modern JavaScript ecosystem
+- Inspired by the need for universal monorepo tooling
+- Thanks to the communities behind npm, pnpm, and Bun for creating excellent package managers
 
 ---
 
-**Made with ❤️ for the Bun community**
+**Made with ❤️ for the JavaScript monorepo community**

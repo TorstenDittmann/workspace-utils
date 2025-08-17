@@ -1,7 +1,7 @@
 {
 	"name": "test-npm-workspace",
 	"version": "1.0.0",
-	"description": "Test npm workspace for bunmono CLI tool",
+	"description": "Test npm workspace for workspace-utils CLI tool",
 	"private": true,
 	"workspaces": [
 		"packages/*",

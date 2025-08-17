@@ -1,7 +1,7 @@
 {
 	"name": "test-pnpm-workspace",
 	"version": "1.0.0",
-	"description": "Test pnpm workspace for bunmono CLI tool",
+	"description": "Test pnpm workspace for workspace-utils CLI tool",
 	"private": true,
 	"scripts": {
 		"build": "echo 'Building all packages with pnpm...'",

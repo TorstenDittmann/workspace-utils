@@ -1,7 +1,7 @@
 {
 	"name": "test-workspace",
 	"version": "1.0.0",
-	"description": "Test workspace for bunmono CLI tool",
+	"description": "Test workspace for workspace-utils CLI tool",
 	"private": true,
 	"workspaces": [
 		"packages/*",

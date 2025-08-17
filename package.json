@@ -4,6 +4,9 @@
 	"description": "A CLI tool to orchestrate scripts across monorepo workspaces (Bun, pnpm, npm) with parallel execution and dependency-aware builds.",
 	"module": "index.ts",
 	"type": "module",
+	"files": [
+		"dist/"
+	],
 	"bin": {
 		"workspace-utils": "./dist/index.js",
 		"wsu": "./dist/index.js"

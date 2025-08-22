@@ -83,7 +83,9 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[TOOL] Package manager: bun'));
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('[TOOL] Package manager: bun')
+			);
 			expect(consoleSpy).toHaveBeenCalledWith(
 				expect.stringContaining('[FAST] Execution mode: parallel (concurrency: 4)')
 			);
@@ -242,7 +244,9 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[TOOL] Package manager: pnpm'));
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('[TOOL] Package manager: pnpm')
+			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
@@ -289,7 +293,9 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[TOOL] Package manager: npm'));
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('[TOOL] Package manager: npm')
+			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();

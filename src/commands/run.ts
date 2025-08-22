@@ -37,8 +37,6 @@ export async function runCommand(scriptName: string, options: RunCommandOptions)
 		const { valid: packagesWithScript, invalid: packagesWithoutScript } =
 			validatePackagesHaveScript(targetPackages, scriptName);
 
-
-
 		if (packagesWithScript.length === 0) {
 			Output.error(`No packages found with the "${scriptName}" script.`);
 			process.exit(1);

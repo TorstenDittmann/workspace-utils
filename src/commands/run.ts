@@ -37,13 +37,7 @@ export async function runCommand(scriptName: string, options: RunCommandOptions)
 		const { valid: packagesWithScript, invalid: packagesWithoutScript } =
 			validatePackagesHaveScript(targetPackages, scriptName);
 
-		if (packagesWithoutScript.length > 0) {
-			Output.warning(`The following packages don't have the "${scriptName}" script:`);
-			packagesWithoutScript.forEach(pkg => {
-				Output.listItem(pkg.name);
-			});
-			console.log();
-		}
+
 
 		if (packagesWithScript.length === 0) {
 			Output.error(`No packages found with the "${scriptName}" script.`);

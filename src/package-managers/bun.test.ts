@@ -202,8 +202,8 @@ describe('BunPackageManager', () => {
 	});
 
 	describe('getLockFileName', () => {
-		it('should return "bun.lockb"', () => {
-			expect(bunManager.getLockFileName()).toBe('bun.lockb');
+		it('should return "bun.lock"', () => {
+			expect(bunManager.getLockFileName()).toBe('bun.lock');
 		});
 	});
 });

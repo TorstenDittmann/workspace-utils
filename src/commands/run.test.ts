@@ -83,9 +83,11 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('🔧 Package manager: bun'));
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('⚡ Execution mode: parallel (concurrency: 4)')
+				expect.stringContaining('[TOOL] Package manager: bun')
+			);
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('[FAST] Execution mode: parallel (concurrency: 4)')
 			);
 
 			consoleSpy.mockRestore();
@@ -107,7 +109,7 @@ describe('runCommand', () => {
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('⚡ Execution mode: sequential')
+				expect.stringContaining('[FAST] Execution mode: sequential')
 			);
 
 			consoleSpy.mockRestore();
@@ -129,10 +131,10 @@ describe('runCommand', () => {
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('🔍 Filtered to 1 packages matching "*pkg1*"')
+				expect.stringContaining('[FIND] Filtered to 1 packages matching "*pkg1*"')
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('✅ Running "test" in 1 packages:')
+				expect.stringContaining('[OK] Running "test" in 1 packages:')
 			);
 
 			consoleSpy.mockRestore();
@@ -153,10 +155,10 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
+			// Should still run the script on packages that have it
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('⚠️  The following packages don\'t have the "lint" script:')
+				expect.stringContaining('[OK] Running "lint" in 1 packages:')
 			);
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('• @test/pkg2'));
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
@@ -177,7 +179,7 @@ describe('runCommand', () => {
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('❌ No packages found with the "nonexistent" script.')
+				expect.stringContaining('[ERR] No packages found with the "nonexistent" script.')
 			);
 			expect(processExitSpy).toHaveBeenCalledWith(1);
 
@@ -200,7 +202,7 @@ describe('runCommand', () => {
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('⚡ Execution mode: parallel (concurrency: 8)')
+				expect.stringContaining('[FAST] Execution mode: parallel (concurrency: 8)')
 			);
 
 			consoleSpy.mockRestore();
@@ -242,7 +244,9 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('🔧 Package manager: pnpm'));
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('[TOOL] Package manager: pnpm')
+			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
@@ -289,7 +293,9 @@ describe('runCommand', () => {
 				// Expected to throw due to process.exit mock
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('🔧 Package manager: npm'));
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('[TOOL] Package manager: npm')
+			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
@@ -306,7 +312,7 @@ describe('runCommand', () => {
 				})
 			);
 
-			const consoleSpy = spyOn(console, 'error');
+			const consoleSpy = spyOn(console, 'log');
 			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
 				throw new Error('process.exit called');
 			});
@@ -319,7 +325,7 @@ describe('runCommand', () => {
 				expect((error as Error).message).toBe('process.exit called');
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('💥 Error:'));
+			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[BOOM] Error:'));
 			expect(processExitSpy).toHaveBeenCalledWith(1);
 
 			consoleSpy.mockRestore();

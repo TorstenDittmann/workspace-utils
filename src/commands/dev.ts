@@ -120,11 +120,20 @@ export async function devCommand(options: DevCommandOptions): Promise<void> {
 			Output.log('\n\nShutting down development servers...', 'warning', 'yellow');
 			Output.dim('This may take a moment to gracefully stop all processes.\n');
 
-			// Force exit after a timeout
+			// Begin graceful termination of all active child processes
+			ProcessRunner.terminateAll('SIGTERM', 5000)
+				.then(() => {
+					process.exit(0);
+				})
+				.catch(() => {
+					process.exit(0);
+				});
+
+			// Force exit as a final fallback
 			setTimeout(() => {
 				Output.log('Timeout reached, forcing exit...', 'clock', 'red');
 				process.exit(0);
-			}, 5000);
+			}, 6000);
 		};
 
 		process.on('SIGINT', shutdown);

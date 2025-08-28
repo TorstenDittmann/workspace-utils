@@ -1,6 +1,6 @@
 {
 	"name": "workspace-utils",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "A CLI tool to orchestrate scripts across monorepo workspaces (Bun, pnpm, npm) with parallel execution and dependency-aware builds.",
 	"module": "index.ts",
 	"type": "module",

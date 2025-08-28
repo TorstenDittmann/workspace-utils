@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import pc from 'picocolors';
 
 export interface ProcessOptions {
@@ -40,6 +40,9 @@ export class ProcessRunner {
 
 	private static assignedColors = new Map<string, string>();
 	private static colorIndex = 0;
+
+	// Track active child processes to enable graceful shutdown (e.g., for `dev`)
+	private static activeChildren: Set<ChildProcess> = new Set();
 
 	/**
 	 * Get a consistent color for a package
@@ -113,6 +116,9 @@ export class ProcessRunner {
 				stdio: ['inherit', 'pipe', 'pipe'],
 			});
 
+			// Register child for potential global shutdown
+			ProcessRunner.activeChildren.add(childProcess);
+
 			// Stream stdout with prefix and color
 			if (childProcess.stdout) {
 				childProcess.stdout.on('data', data => {
@@ -138,6 +144,8 @@ export class ProcessRunner {
 			}
 
 			childProcess.on('close', exitCode => {
+				// Deregister on close
+				ProcessRunner.activeChildren.delete(childProcess);
 				const duration = Date.now() - startTime;
 				const code = exitCode || 0;
 
@@ -165,6 +173,8 @@ export class ProcessRunner {
 			});
 
 			childProcess.on('error', error => {
+				// Deregister on error
+				ProcessRunner.activeChildren.delete(childProcess);
 				const duration = Date.now() - startTime;
 				const colorFn = this.getColorFn(logOptions.color);
 				console.error(`[${colorFn(logOptions.prefix)}] ` + pc.red(`💥 Error: ${error.message}`));
@@ -178,6 +188,55 @@ export class ProcessRunner {
 				});
 			});
 		});
+	}
+
+	/**
+	 * Terminate all active child processes gracefully.
+	 * Sends the provided signal and waits up to graceMs, then force-kills.
+	 */
+	static async terminateAll(signal: NodeJS.Signals = 'SIGTERM', graceMs = 5000): Promise<void> {
+		const children = Array.from(this.activeChildren);
+		if (children.length === 0) return;
+
+		// Send initial signal
+		for (const child of children) {
+			try {
+				child.kill(signal);
+			} catch {
+				// ignore
+			}
+		}
+
+		// Await close for each with timeout
+		await Promise.all(
+			children.map(child => {
+				return new Promise<void>(resolve => {
+					let settled = false;
+					const onClose = () => {
+						if (settled) return;
+						settled = true;
+						resolve();
+					};
+					child.once('close', onClose);
+
+					const timer = setTimeout(() => {
+						if (settled) return;
+						// Force kill if still alive
+						try {
+							child.kill('SIGKILL');
+						} catch {
+							// ignore
+						}
+						settled = true;
+						resolve();
+					}, graceMs);
+
+					// If the process has already exited, resolve quickly
+					// Note: There's no portable way to check if it's already dead without race conditions,
+					// the 'close' handler above will handle it if it fires immediately.
+				});
+			})
+		);
 	}
 
 	/**

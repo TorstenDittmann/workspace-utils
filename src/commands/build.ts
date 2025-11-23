@@ -7,11 +7,37 @@ import {
 } from '../utils/package-utils.ts';
 import { ProcessRunner } from '../core/process-runner.ts';
 import { Output } from '../utils/output.ts';
+import type { PackageInfo } from '../core/workspace.ts';
 
 interface BuildCommandOptions {
 	filter?: string;
 	concurrency?: string;
 	skipUnchanged?: boolean;
+}
+
+function collectPackagesWithDependencies(
+	packages: PackageInfo[],
+	packageMap: Map<string, PackageInfo>
+): PackageInfo[] {
+	const queue = [...packages];
+	const collected = new Map<string, PackageInfo>();
+
+	while (queue.length > 0) {
+		const pkg = queue.shift();
+		if (!pkg || collected.has(pkg.name)) continue;
+
+		collected.set(pkg.name, pkg);
+
+		const dependencies = [...pkg.dependencies, ...pkg.devDependencies];
+		for (const depName of dependencies) {
+			const depPackage = packageMap.get(depName);
+			if (depPackage && !collected.has(depName)) {
+				queue.push(depPackage);
+			}
+		}
+	}
+
+	return Array.from(collected.values());
 }
 
 export async function buildCommand(options: BuildCommandOptions): Promise<void> {
@@ -36,23 +62,37 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 			);
 		}
 
-		// Validate packages have the build script
+		// Validate filtered packages have the build script
+		const { valid: buildableTargets, invalid: targetPackagesWithoutBuild } =
+			validatePackagesHaveScript(targetPackages, 'build');
+
+		if (buildableTargets.length === 0) {
+			Output.error('No packages found with a "build" script.');
+			process.exit(1);
+		}
+
+		// Include dependencies of the filtered packages in the build set
+		const packagesWithDependencies = collectPackagesWithDependencies(
+			buildableTargets,
+			workspace.packageMap
+		);
+
 		const { valid: packagesWithBuild, invalid: packagesWithoutBuild } = validatePackagesHaveScript(
-			targetPackages,
+			packagesWithDependencies,
 			'build'
 		);
 
-		if (packagesWithoutBuild.length > 0) {
+		const missingBuildScriptPackages = new Map<string, PackageInfo>();
+		[...targetPackagesWithoutBuild, ...packagesWithoutBuild].forEach(pkg => {
+			missingBuildScriptPackages.set(pkg.name, pkg);
+		});
+
+		if (missingBuildScriptPackages.size > 0) {
 			Output.warning(`The following packages don't have a "build" script:`);
-			packagesWithoutBuild.forEach(pkg => {
+			Array.from(missingBuildScriptPackages.values()).forEach(pkg => {
 				Output.listItem(pkg.name);
 			});
 			console.log();
-		}
-
-		if (packagesWithBuild.length === 0) {
-			Output.error('No packages found with a "build" script.');
-			process.exit(1);
 		}
 
 		// Build dependency graph

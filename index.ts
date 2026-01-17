@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { runCommand } from './src/commands/run.ts';
 import { buildCommand } from './src/commands/build.ts';
 import { devCommand } from './src/commands/dev.ts';
+import { cleanCommand } from './src/commands/clean.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -74,6 +75,18 @@ program
 			process.env.WSU_ASCII = '1';
 		}
 		return devCommand(options);
+	});
+
+// Clean command - remove node_modules across packages
+program
+	.command('clean')
+	.description('Remove node_modules directories across all packages')
+	.option('-f, --filter <pattern>', 'Filter packages by pattern')
+	.action(options => {
+		if (program.opts().ascii) {
+			process.env.WSU_ASCII = '1';
+		}
+		return cleanCommand(options);
 	});
 
 // Default to help if no command provided

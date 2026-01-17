@@ -1,6 +1,6 @@
 # Commands Overview
 
-workspace-utils provides three main commands designed to handle different aspects of monorepo workflow management. Each command is optimized for specific use cases while sharing common functionality like package filtering and concurrency control.
+workspace-utils provides four main commands designed to handle different aspects of monorepo workflow management. Each command is optimized for specific use cases while sharing common functionality like package filtering and concurrency control.
 
 ## Command Summary
 
@@ -9,6 +9,7 @@ workspace-utils provides three main commands designed to handle different aspect
 | [`run`](./run.md)     | Execute scripts across packages        | **Parallel**         | Tests, linting, custom scripts |
 | [`build`](./build.md) | Build packages respecting dependencies | **Dependency order** | Production builds, CI/CD       |
 | [`dev`](./dev.md)     | Start development servers              | **Parallel**         | Local development              |
+| [`clean`](./clean.md) | Remove node_modules directories        | **Sequential**       | Fresh installs, disk cleanup   |
 
 ## Quick Reference
 
@@ -94,6 +95,34 @@ Start development servers with live log streaming. Designed for long-running pro
 npm run dev         # Start all dev servers
 npm run dev:scope   # Start scoped packages
 npm run dev:limited # Limit concurrent servers
+```
+
+### wsu clean
+
+```bash
+wsu clean [options]
+```
+
+Remove `node_modules` directories from the workspace root and all packages.
+
+**Package.json setup:**
+
+```json
+{
+	"scripts": {
+		"clean": "wsu clean",
+		"clean:apps": "wsu clean --filter 'apps/*'",
+		"reinstall": "wsu clean && npm install"
+	}
+}
+```
+
+**Usage:**
+
+```bash
+npm run clean       # Remove all node_modules
+npm run clean:apps  # Clean only app packages
+npm run reinstall   # Clean and reinstall
 ```
 
 ## Global Options
@@ -205,6 +234,7 @@ All commands provide consistent, color-coded output:
 - **`run`** for most script execution (tests, linting, utilities)
 - **`build`** when package dependencies matter
 - **`dev`** for long-running development processes
+- **`clean`** to remove node_modules for fresh installs
 
 ### Use Filtering Effectively
 
@@ -237,3 +267,4 @@ Dive deeper into each command:
 - [**run command**](./run.md) - Detailed script execution options
 - [**build command**](./build.md) - Dependency-aware building
 - [**dev command**](./dev.md) - Development server management
+- [**clean command**](./clean.md) - Remove node_modules directories

@@ -14,6 +14,7 @@
 - [run](./commands/run.md)
 - [build](./commands/build.md)
 - [dev](./commands/dev.md)
+- [clean](./commands/clean.md)
 
 # Usage Examples
 

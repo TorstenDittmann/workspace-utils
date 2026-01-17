@@ -1,6 +1,6 @@
 {
 	"name": "workspace-utils",
-	"version": "1.0.4",
+	"version": "1.0.6",
 	"description": "A CLI tool to orchestrate scripts across monorepo workspaces (Bun, pnpm, npm) with parallel execution and dependency-aware builds.",
 	"module": "index.ts",
 	"type": "module",
@@ -12,7 +12,7 @@
 		"wsu": "./dist/index.js"
 	},
 	"scripts": {
-		"build": "bun build index.ts --outdir dist --target node && cp package.json dist/",
+		"build": "bun run build.ts",
 		"dev": "bun run index.ts",
 		"prepublishOnly": "bun run build",
 		"format": "prettier --write .",
@@ -34,7 +34,7 @@
 		"dependency-graph",
 		"build-orchestration"
 	],
-	"author": "",
+	"author": "Torsten Dittmann",
 	"license": "MIT",
 	"dependencies": {
 		"commander": "^11.1.0",

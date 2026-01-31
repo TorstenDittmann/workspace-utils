@@ -62,8 +62,8 @@ If workspace-utils can't detect your workspace:
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - 'packages/*'
-  - 'apps/*'
+    - "packages/*"
+    - "apps/*"
 ```
 
 **Example for npm/Bun:**
@@ -353,14 +353,14 @@ If you prefer Unicode characters:
 
 1. Update your terminal to a modern version
 2. Set proper environment variables:
-   ```bash
-   export LANG=en_US.UTF-8
-   export LC_ALL=en_US.UTF-8
-   ```
+    ```bash
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    ```
 3. Force Unicode mode:
-   ```bash
-   export WSU_UNICODE=1
-   ```
+    ```bash
+    export WSU_UNICODE=1
+    ```
 
 **Debug what's being detected:**
 
@@ -500,10 +500,10 @@ If you encounter a bug or need help:
 1. **Check this troubleshooting guide first**
 2. **Search existing issues** in the repository
 3. **Provide minimal reproduction** when reporting:
-   - Your `package.json` scripts
-   - Workspace structure
-   - Full error message
-   - Node.js and package manager versions
+    - Your `package.json` scripts
+    - Workspace structure
+    - Full error message
+    - Node.js and package manager versions
 
 **Useful info to include:**
 

@@ -2,13 +2,13 @@
  * Web Application Entry Point
  */
 
-import { Button, formatTimestamp } from '@test/ui-components';
-import { generateId } from '@test/shared-utils';
+import { Button, formatTimestamp } from "@test/ui-components";
+import { generateId } from "@test/shared-utils";
 
 export interface AppConfig {
 	name: string;
 	version: string;
-	environment: 'development' | 'production';
+	environment: "development" | "production";
 }
 
 export class WebApp {
@@ -28,7 +28,7 @@ export class WebApp {
 	}
 
 	renderButton(label: string): ReturnType<typeof Button> {
-		return Button({ label, variant: 'primary' });
+		return Button({ label, variant: "primary" });
 	}
 }
 

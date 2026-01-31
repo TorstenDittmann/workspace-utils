@@ -1,4 +1,4 @@
-import pc from 'picocolors';
+import pc from "picocolors";
 
 interface OutputSymbols {
 	rocket: string;
@@ -33,7 +33,7 @@ interface OutputSymbols {
 // Always use ASCII for maximum compatibility
 function supportsUnicode(): boolean {
 	// Only use Unicode if explicitly requested
-	if (process.env.WSU_UNICODE === '1' || process.env.WSU_UNICODE === 'true') {
+	if (process.env.WSU_UNICODE === "1" || process.env.WSU_UNICODE === "true") {
 		return true;
 	}
 
@@ -43,63 +43,63 @@ function supportsUnicode(): boolean {
 
 // Create symbol sets based on Unicode support
 const UNICODE_SYMBOLS: OutputSymbols = {
-	rocket: '🚀',
-	folder: '📁',
-	package: '📦',
-	checkmark: '✅',
-	crossmark: '❌',
-	warning: '⚠️',
-	wrench: '🔧',
-	lightning: '🚀',
-	clock: '⏱️',
-	target: '🎯',
-	magnifying: '🔍',
-	chart: '📊',
-	fire: '💥',
-	trophy: '🏆',
-	seedling: '🌱',
-	leaf: '🍃',
-	books: '📚',
-	gear: '🔧',
-	construction: '🏗️',
-	movie: '🎬',
-	lightbulb: '💡',
-	sparkles: '✨',
-	party: '🎉',
-	boom: '💥',
-	building: '🏢',
-	arrow: '🔗',
-	dot: '🔸',
+	rocket: "🚀",
+	folder: "📁",
+	package: "📦",
+	checkmark: "✅",
+	crossmark: "❌",
+	warning: "⚠️",
+	wrench: "🔧",
+	lightning: "🚀",
+	clock: "⏱️",
+	target: "🎯",
+	magnifying: "🔍",
+	chart: "📊",
+	fire: "💥",
+	trophy: "🏆",
+	seedling: "🌱",
+	leaf: "🍃",
+	books: "📚",
+	gear: "🔧",
+	construction: "🏗️",
+	movie: "🎬",
+	lightbulb: "💡",
+	sparkles: "✨",
+	party: "🎉",
+	boom: "💥",
+	building: "🏢",
+	arrow: "🔗",
+	dot: "🔸",
 };
 
 const ASCII_SYMBOLS: OutputSymbols = {
-	rocket: '>',
-	folder: '[DIR]',
-	package: '[PKG]',
-	checkmark: '[OK]',
-	crossmark: '[ERR]',
-	warning: '[WARN]',
-	wrench: '[TOOL]',
-	lightning: '[FAST]',
-	clock: '[TIME]',
-	target: '[TARGET]',
-	magnifying: '[FIND]',
-	chart: '[CHART]',
-	fire: '[BOOM]',
-	trophy: '[WIN]',
-	seedling: '[ROOT]',
-	leaf: '[LEAF]',
-	books: '[DOCS]',
-	gear: '[GEAR]',
-	construction: '[BUILD]',
-	movie: '[START]',
-	lightbulb: '[TIP]',
-	sparkles: '[DONE]',
-	party: '[SUCCESS]',
-	boom: '[ERROR]',
-	building: '[CORP]',
-	arrow: '->',
-	dot: '*',
+	rocket: ">",
+	folder: "[DIR]",
+	package: "[PKG]",
+	checkmark: "[OK]",
+	crossmark: "[ERR]",
+	warning: "[WARN]",
+	wrench: "[TOOL]",
+	lightning: "[FAST]",
+	clock: "[TIME]",
+	target: "[TARGET]",
+	magnifying: "[FIND]",
+	chart: "[CHART]",
+	fire: "[BOOM]",
+	trophy: "[WIN]",
+	seedling: "[ROOT]",
+	leaf: "[LEAF]",
+	books: "[DOCS]",
+	gear: "[GEAR]",
+	construction: "[BUILD]",
+	movie: "[START]",
+	lightbulb: "[TIP]",
+	sparkles: "[DONE]",
+	party: "[SUCCESS]",
+	boom: "[ERROR]",
+	building: "[CORP]",
+	arrow: "->",
+	dot: "*",
 };
 
 // Select appropriate symbol set
@@ -117,9 +117,9 @@ export class Output {
 	static log(
 		message: string,
 		symbol?: keyof OutputSymbols,
-		color?: 'blue' | 'green' | 'red' | 'yellow' | 'dim'
+		color?: "blue" | "green" | "red" | "yellow" | "dim",
 	): void {
-		const prefix = symbol ? `${this.symbols[symbol]} ` : '';
+		const prefix = symbol ? `${this.symbols[symbol]} ` : "";
 		const formattedMessage = `${prefix}${message}`;
 
 		if (color) {
@@ -133,92 +133,92 @@ export class Output {
 	 * Log an info message (blue with rocket)
 	 */
 	static info(message: string): void {
-		this.log(message, 'rocket', 'blue');
+		this.log(message, "rocket", "blue");
 	}
 
 	/**
 	 * Log a success message (green with checkmark)
 	 */
 	static success(message: string): void {
-		this.log(message, 'checkmark', 'green');
+		this.log(message, "checkmark", "green");
 	}
 
 	/**
 	 * Log an error message (red with crossmark)
 	 */
 	static error(message: string): void {
-		this.log(message, 'crossmark', 'red');
+		this.log(message, "crossmark", "red");
 	}
 
 	/**
 	 * Log a warning message (yellow with warning)
 	 */
 	static warning(message: string): void {
-		this.log(message, 'warning', 'yellow');
+		this.log(message, "warning", "yellow");
 	}
 
 	/**
 	 * Log a dim/muted message
 	 */
 	static dim(message: string, symbol?: keyof OutputSymbols): void {
-		this.log(message, symbol, 'dim');
+		this.log(message, symbol, "dim");
 	}
 
 	/**
 	 * Log a build-related message
 	 */
 	static build(message: string): void {
-		this.log(message, 'construction', 'blue');
+		this.log(message, "construction", "blue");
 	}
 
 	/**
 	 * Log a development-related message
 	 */
 	static dev(message: string): void {
-		this.log(message, 'movie', 'blue');
+		this.log(message, "movie", "blue");
 	}
 
 	/**
 	 * Log a package-related message
 	 */
 	static package(message: string): void {
-		this.log(message, 'package', 'blue');
+		this.log(message, "package", "blue");
 	}
 
 	/**
 	 * Log a timing message
 	 */
 	static timing(message: string): void {
-		this.log(message, 'clock', 'blue');
+		this.log(message, "clock", "blue");
 	}
 
 	/**
 	 * Log a target/summary message
 	 */
 	static summary(message: string): void {
-		this.log(message, 'target', 'blue');
+		this.log(message, "target", "blue");
 	}
 
 	/**
 	 * Log a celebration message
 	 */
 	static celebrate(message: string): void {
-		this.log(message, 'party', 'green');
+		this.log(message, "party", "green");
 	}
 
 	/**
 	 * Log a tip message
 	 */
 	static tip(message: string): void {
-		this.log(message, 'lightbulb', 'yellow');
+		this.log(message, "lightbulb", "yellow");
 	}
 
 	/**
 	 * Create a formatted list item
 	 */
 	static listItem(item: string, indent: number = 2): void {
-		const spaces = ' '.repeat(indent);
-		this.log(`${spaces}${item}`, 'dot', 'dim');
+		const spaces = " ".repeat(indent);
+		this.log(`${spaces}${item}`, "dot", "dim");
 	}
 
 	/**
@@ -226,8 +226,8 @@ export class Output {
 	 */
 	static separator(): void {
 		const line = supportsUnicode()
-			? '────────────────────────────────────────────────────────'
-			: '--------------------------------------------------------';
+			? "────────────────────────────────────────────────────────"
+			: "--------------------------------------------------------";
 		console.log(pc.dim(line));
 	}
 
@@ -243,7 +243,7 @@ export class Output {
 	 */
 	static formatPackageName(
 		name: string,
-		color?: 'blue' | 'green' | 'red' | 'yellow' | 'dim'
+		color?: "blue" | "green" | "red" | "yellow" | "dim",
 	): string {
 		const formatted = `[${name}]`;
 		return color ? pc[color](formatted) : formatted;

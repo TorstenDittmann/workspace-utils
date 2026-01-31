@@ -284,8 +284,8 @@ Your project must have one of the following workspace configurations:
 
 ```yaml
 packages:
-  - 'packages/*'
-  - 'apps/*'
+    - "packages/*"
+    - "apps/*"
 ```
 
 ## 🌐 Package Manager Support

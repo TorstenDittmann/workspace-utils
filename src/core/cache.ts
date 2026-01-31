@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash } from "crypto";
 import {
 	readFileSync,
 	writeFileSync,
@@ -7,22 +7,22 @@ import {
 	appendFileSync,
 	statSync,
 	rmSync,
-} from 'fs';
-import { join, relative, dirname } from 'path';
-import { promisify } from 'util';
-import { exec } from 'child_process';
-import fg from 'fast-glob';
-import type { PackageInfo } from './workspace.ts';
-import { Output } from '../utils/output.ts';
+} from "fs";
+import { join, relative, dirname } from "path";
+import { promisify } from "util";
+import { exec } from "child_process";
+import fg from "fast-glob";
+import type { PackageInfo } from "./workspace.ts";
+import { Output } from "../utils/output.ts";
 
 const execAsync = promisify(exec);
 
 const CACHE_VERSION = 2; // Bumped for new structure
-const CACHE_DIR_NAME = '.wsu';
-const PACKAGES_DIR = 'packages';
-const CACHE_FILE = 'cache.json';
-const FILES_FILE = 'files.json';
-const MANIFEST_FILE = 'manifest.json';
+const CACHE_DIR_NAME = ".wsu";
+const PACKAGES_DIR = "packages";
+const CACHE_FILE = "cache.json";
+const FILES_FILE = "files.json";
+const MANIFEST_FILE = "manifest.json";
 
 // Per-package file metadata
 interface FileMetadata {
@@ -80,7 +80,7 @@ export class BuildCache {
 		// Create .wsu directory
 		if (!existsSync(this.baseCacheDir)) {
 			mkdirSync(this.baseCacheDir, { recursive: true });
-			Output.dim(`Created ${CACHE_DIR_NAME}/ directory`, 'folder');
+			Output.dim(`Created ${CACHE_DIR_NAME}/ directory`, "folder");
 		}
 
 		// Ensure .wsu is in .gitignore
@@ -117,28 +117,28 @@ export class BuildCache {
 	 * Add .wsu/ to .gitignore if not already present
 	 */
 	private async ensureGitignore(): Promise<void> {
-		const gitignorePath = join(this.workspaceRoot, '.gitignore');
+		const gitignorePath = join(this.workspaceRoot, ".gitignore");
 
 		if (!existsSync(gitignorePath)) {
-			writeFileSync(gitignorePath, `# Workspace utils cache\n${CACHE_DIR_NAME}/\n`, 'utf8');
-			Output.dim(`Created .gitignore with ${CACHE_DIR_NAME}/ entry`, 'checkmark');
+			writeFileSync(gitignorePath, `# Workspace utils cache\n${CACHE_DIR_NAME}/\n`, "utf8");
+			Output.dim(`Created .gitignore with ${CACHE_DIR_NAME}/ entry`, "checkmark");
 			return;
 		}
 
-		const content = readFileSync(gitignorePath, 'utf8');
-		const lines = content.split('\n');
+		const content = readFileSync(gitignorePath, "utf8");
+		const lines = content.split("\n");
 
 		const isIgnored = lines.some(
-			line =>
+			(line) =>
 				line.trim() === `${CACHE_DIR_NAME}/` ||
 				line.trim() === CACHE_DIR_NAME ||
-				line.trim().startsWith(`${CACHE_DIR_NAME}/`)
+				line.trim().startsWith(`${CACHE_DIR_NAME}/`),
 		);
 
 		if (!isIgnored) {
 			const newEntry = `\n# Workspace utils cache\n${CACHE_DIR_NAME}/\n`;
-			appendFileSync(gitignorePath, newEntry, 'utf8');
-			Output.dim(`Added ${CACHE_DIR_NAME}/ to .gitignore`, 'checkmark');
+			appendFileSync(gitignorePath, newEntry, "utf8");
+			Output.dim(`Added ${CACHE_DIR_NAME}/ to .gitignore`, "checkmark");
 		}
 	}
 
@@ -149,7 +149,7 @@ export class BuildCache {
 		if (!existsSync(this.manifestPath)) return;
 
 		try {
-			const content = readFileSync(this.manifestPath, 'utf8');
+			const content = readFileSync(this.manifestPath, "utf8");
 			const data = JSON.parse(content) as CacheManifest;
 
 			if (data.version === CACHE_VERSION) {
@@ -170,7 +170,7 @@ export class BuildCache {
 	 * Save manifest to disk
 	 */
 	private saveManifest(): void {
-		writeFileSync(this.manifestPath, JSON.stringify(this.manifest, null, 2), 'utf8');
+		writeFileSync(this.manifestPath, JSON.stringify(this.manifest, null, 2), "utf8");
 	}
 
 	/**
@@ -181,7 +181,7 @@ export class BuildCache {
 		if (!existsSync(cachePath)) return undefined;
 
 		try {
-			const content = readFileSync(cachePath, 'utf8');
+			const content = readFileSync(cachePath, "utf8");
 			const entry = JSON.parse(content) as CacheEntry;
 			this.packageCaches.set(packageName, entry);
 			return entry;
@@ -200,7 +200,7 @@ export class BuildCache {
 		}
 
 		const cachePath = this.getPackageCachePath(packageName);
-		writeFileSync(cachePath, JSON.stringify(entry, null, 2), 'utf8');
+		writeFileSync(cachePath, JSON.stringify(entry, null, 2), "utf8");
 		this.packageCaches.set(packageName, entry);
 
 		// Update manifest
@@ -218,7 +218,7 @@ export class BuildCache {
 
 		if (existsSync(filesPath)) {
 			try {
-				const content = readFileSync(filesPath, 'utf8');
+				const content = readFileSync(filesPath, "utf8");
 				const index = JSON.parse(content) as PackageFileIndex;
 				if (index.version === CACHE_VERSION) {
 					this.packageFileIndexes.set(packageName, index);
@@ -251,14 +251,14 @@ export class BuildCache {
 		}
 
 		const filesPath = this.getPackageFilesPath(packageName);
-		writeFileSync(filesPath, JSON.stringify(index, null, 2), 'utf8');
+		writeFileSync(filesPath, JSON.stringify(index, null, 2), "utf8");
 	}
 
 	/**
 	 * Calculate SHA256 hash
 	 */
 	private hashString(input: string): string {
-		return createHash('sha256').update(input).digest('hex');
+		return createHash("sha256").update(input).digest("hex");
 	}
 
 	/**
@@ -276,7 +276,7 @@ export class BuildCache {
 
 			// Compute new hash
 			const content = readFileSync(filePath);
-			const hash = createHash('sha256').update(content).digest('hex');
+			const hash = createHash("sha256").update(content).digest("hex");
 
 			// Update index
 			fileIndex.files[relativePath] = {
@@ -287,7 +287,7 @@ export class BuildCache {
 
 			return hash;
 		} catch {
-			return '';
+			return "";
 		}
 	}
 
@@ -300,15 +300,15 @@ export class BuildCache {
 
 		for (let i = 0; i < files.length; i += batchSize) {
 			const batch = files.slice(i, i + batchSize);
-			const relativePaths = batch.map(f => relative(this.workspaceRoot, f));
+			const relativePaths = batch.map((f) => relative(this.workspaceRoot, f));
 
 			try {
 				const { stdout } = await execAsync(
-					`git check-ignore ${relativePaths.map(p => `"${p}"`).join(' ')}`,
-					{ cwd: this.workspaceRoot }
+					`git check-ignore ${relativePaths.map((p) => `"${p}"`).join(" ")}`,
+					{ cwd: this.workspaceRoot },
 				);
 
-				const ignoredSet = new Set(stdout.trim().split('\n').filter(Boolean));
+				const ignoredSet = new Set(stdout.trim().split("\n").filter(Boolean));
 
 				for (let j = 0; j < batch.length; j++) {
 					const relativePath = relativePaths[j];
@@ -330,18 +330,18 @@ export class BuildCache {
 	 */
 	private async getSourceFiles(
 		packagePath: string,
-		packageName: string
+		packageName: string,
 	): Promise<{ path: string; relative: string }[]> {
-		const allFiles = await fg(['**/*'], {
+		const allFiles = await fg(["**/*"], {
 			cwd: packagePath,
 			absolute: true,
 			onlyFiles: true,
-			ignore: ['node_modules/**', '.git/**', CACHE_DIR_NAME + '/**'],
+			ignore: ["node_modules/**", ".git/**", CACHE_DIR_NAME + "/**"],
 		});
 
 		const nonIgnored = await this.filterGitIgnored(allFiles, packagePath);
 
-		return nonIgnored.map(f => ({
+		return nonIgnored.map((f) => ({
 			path: f,
 			relative: relative(packagePath, f),
 		}));
@@ -352,13 +352,13 @@ export class BuildCache {
 	 */
 	async calculatePackageHash(
 		pkg: PackageInfo,
-		packageMap: Map<string, PackageInfo>
+		packageMap: Map<string, PackageInfo>,
 	): Promise<string> {
 		const fileIndex = this.loadPackageFileIndex(pkg.name);
 
 		// Hash package.json
-		const packageJsonPath = join(pkg.path, 'package.json');
-		const packageJsonHash = this.hashFile(packageJsonPath, fileIndex, 'package.json');
+		const packageJsonPath = join(pkg.path, "package.json");
+		const packageJsonHash = this.hashFile(packageJsonPath, fileIndex, "package.json");
 
 		// Hash source files
 		const sourceFiles = await this.getSourceFiles(pkg.path, pkg.name);
@@ -388,9 +388,9 @@ export class BuildCache {
 		// Combine all hashes
 		const combined = [
 			`packageJson:${packageJsonHash}`,
-			`sources:${fileHashes.join(',')}`,
-			`deps:${depHashes.sort().join(',')}`,
-		].join('\n');
+			`sources:${fileHashes.join(",")}`,
+			`deps:${depHashes.sort().join(",")}`,
+		].join("\n");
 
 		return this.hashString(combined);
 	}
@@ -414,7 +414,7 @@ export class BuildCache {
 	async update(
 		pkg: PackageInfo,
 		packageMap: Map<string, PackageInfo>,
-		buildDuration: number
+		buildDuration: number,
 	): Promise<void> {
 		const inputHash = await this.calculatePackageHash(pkg, packageMap);
 
@@ -430,7 +430,7 @@ export class BuildCache {
 			dependencyHashes,
 			lastBuild: new Date().toISOString(),
 			buildDuration,
-			builtBy: 'wsu',
+			builtBy: "wsu",
 		};
 
 		// Save package cache
@@ -464,7 +464,7 @@ export class BuildCache {
 	 */
 	invalidateDependents(packageName: string, packages: PackageInfo[]): void {
 		const dependents = packages.filter(
-			p => p.dependencies.includes(packageName) || p.devDependencies.includes(packageName)
+			(p) => p.dependencies.includes(packageName) || p.devDependencies.includes(packageName),
 		);
 
 		for (const dependent of dependents) {
@@ -502,14 +502,16 @@ export class BuildCache {
 		newestBuild: string | null;
 	} {
 		const entries = Array.from(this.packageCaches.values());
-		const timestamps = entries.map(e => new Date(e.lastBuild).getTime()).sort();
+		const timestamps = entries.map((e) => new Date(e.lastBuild).getTime()).sort();
 
 		return {
 			totalPackages: entries.length,
 			lastUpdated: new Date().toISOString(),
 			oldestBuild: timestamps.length > 0 ? new Date(timestamps[0]!).toISOString() : null,
 			newestBuild:
-				timestamps.length > 0 ? new Date(timestamps[timestamps.length - 1]!).toISOString() : null,
+				timestamps.length > 0
+					? new Date(timestamps[timestamps.length - 1]!).toISOString()
+					: null,
 		};
 	}
 

@@ -103,9 +103,9 @@ The tool reads workspace configuration from:
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - 'packages/*'
-  - 'apps/*'
-  - '!**/test/**'
+    - "packages/*"
+    - "apps/*"
+    - "!**/test/**"
 ```
 
 #### npm Workspaces

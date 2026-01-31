@@ -2,40 +2,42 @@
 	"name": "workspace-utils",
 	"version": "1.1.0",
 	"description": "A CLI tool to orchestrate scripts across monorepo workspaces (Bun, pnpm, npm) with parallel execution and dependency-aware builds.",
-	"module": "index.ts",
-	"type": "module",
-	"files": [
-		"dist/"
+	"keywords": [
+		"build-orchestration",
+		"bun",
+		"cli",
+		"dependency-graph",
+		"monorepo",
+		"npm",
+		"parallel",
+		"pnpm",
+		"workspaces"
 	],
+	"license": "MIT",
+	"author": "Torsten Dittmann",
 	"bin": {
 		"workspace-utils": "./dist/index.js",
 		"wsu": "./dist/index.js"
 	},
+	"files": [
+		"dist/"
+	],
+	"type": "module",
+	"module": "index.ts",
 	"scripts": {
 		"build": "bun run build.ts",
 		"dev": "bun run index.ts",
 		"prepublishOnly": "bun run build",
-		"format": "prettier --write .",
-		"format:check": "prettier --check .",
+		"format": "oxfmt",
+		"format:check": "oxfmt --check",
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix",
 		"test": "bun test",
 		"test:watch": "bun test --watch",
 		"docs:build": "cd docs && mdbook build",
 		"docs:serve": "cd docs && mdbook serve",
 		"docs:watch": "cd docs && mdbook serve --open"
 	},
-	"keywords": [
-		"monorepo",
-		"workspaces",
-		"bun",
-		"pnpm",
-		"npm",
-		"cli",
-		"parallel",
-		"dependency-graph",
-		"build-orchestration"
-	],
-	"author": "Torsten Dittmann",
-	"license": "MIT",
 	"dependencies": {
 		"commander": "^11.1.0",
 		"fast-glob": "^3.3.2",
@@ -45,13 +47,14 @@
 	"devDependencies": {
 		"@types/bun": "^1.2.20",
 		"@types/node": "^20.10.0",
-		"prettier": "^3.6.2"
+		"oxfmt": "^0.27.0",
+		"oxlint": "^1.42.0"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
 	},
 	"engines": {
-		"node": ">=18",
-		"bun": ">=1.0.0"
+		"bun": ">=1.0.0",
+		"node": ">=18"
 	}
 }

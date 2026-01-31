@@ -222,7 +222,7 @@ export class ProcessRunner {
 					};
 					child.once("close", onClose);
 
-					const timer = setTimeout(() => {
+					setTimeout(() => {
 						if (settled) return;
 						// Force kill if still alive
 						try {

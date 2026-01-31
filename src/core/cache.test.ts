@@ -84,9 +84,8 @@ describe("BuildCache", () => {
 			mkdirSync(pkg2.path, { recursive: true });
 			writeFileSync(join(pkg2.path, "package.json"), JSON.stringify(pkg2.packageJson));
 
-			const packageMap = new Map<string, PackageInfo>();
-			const hash1 = await cache.calculatePackageHash(pkg1, packageMap);
-			const hash2 = await cache.calculatePackageHash(pkg2, packageMap);
+			const hash1 = await cache.calculatePackageHash(pkg1);
+			const hash2 = await cache.calculatePackageHash(pkg2);
 
 			expect(hash1).not.toBe(hash2);
 		});
@@ -113,15 +112,13 @@ describe("BuildCache", () => {
 				devDependencies: [],
 			};
 
-			const packageMap = new Map<string, PackageInfo>();
-
 			// Calculate hash twice - once with gitignored file, once without
-			const hash1 = await cache.calculatePackageHash(pkg, packageMap);
+			const hash1 = await cache.calculatePackageHash(pkg);
 
 			// Modify the gitignored file
 			writeFileSync(join(pkgPath, "dist", "output.js"), 'console.log("modified")');
 
-			const hash2 = await cache.calculatePackageHash(pkg, packageMap);
+			const hash2 = await cache.calculatePackageHash(pkg);
 
 			// Hashes should be the same (ignored file doesn't affect hash)
 			expect(hash1).toBe(hash2);
@@ -142,8 +139,7 @@ describe("BuildCache", () => {
 			mkdirSync(pkg.path, { recursive: true });
 			writeFileSync(join(pkg.path, "package.json"), JSON.stringify(pkg.packageJson));
 
-			const packageMap = new Map<string, PackageInfo>();
-			const isValid = await cache.isValid(pkg, packageMap);
+			const isValid = await cache.isValid(pkg);
 
 			expect(isValid).toBe(false);
 		});
@@ -167,7 +163,7 @@ describe("BuildCache", () => {
 			await cache.update(pkg, packageMap, 1000);
 
 			// Should be valid immediately after
-			const isValid = await cache.isValid(pkg, packageMap);
+			const isValid = await cache.isValid(pkg);
 			expect(isValid).toBe(true);
 		});
 
@@ -194,7 +190,7 @@ describe("BuildCache", () => {
 			writeFileSync(join(pkg.path, "src.ts"), "modified");
 
 			// Should no longer be valid
-			const isValid = await cache.isValid(pkg, packageMap);
+			const isValid = await cache.isValid(pkg);
 			expect(isValid).toBe(false);
 		});
 	});

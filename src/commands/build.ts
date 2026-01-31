@@ -107,10 +107,8 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 
 		// Check cache for each package (if enabled)
 		if (cache && options.skipUnchanged !== false) {
-			const packageMap = new Map(packagesWithBuild.map((pkg) => [pkg.name, pkg]));
-
 			for (const pkg of packagesWithBuild) {
-				const isCached = await cache.isValid(pkg, packageMap);
+				const isCached = await cache.isValid(pkg);
 				if (isCached) {
 					skippedPackages.push(pkg);
 				} else {

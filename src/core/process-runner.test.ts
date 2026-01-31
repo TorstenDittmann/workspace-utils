@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
-import { ProcessRunner, type ProcessOptions, type LogOptions } from "./process-runner.ts";
+import { describe, it, expect, beforeEach, spyOn } from "bun:test";
+import { ProcessRunner } from "./process-runner.ts";
 
 describe("ProcessRunner", () => {
 	describe("getPackageColor", () => {

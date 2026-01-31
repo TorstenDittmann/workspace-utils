@@ -8,7 +8,7 @@ import {
 	statSync,
 	rmSync,
 } from "fs";
-import { join, relative, dirname } from "path";
+import { join, relative } from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
 import fg from "fast-glob";
@@ -294,7 +294,7 @@ export class BuildCache {
 	/**
 	 * Filter gitignored files in batches
 	 */
-	private async filterGitIgnored(files: string[], packagePath: string): Promise<string[]> {
+	private async filterGitIgnored(files: string[]): Promise<string[]> {
 		const nonIgnored: string[] = [];
 		const batchSize = 50;
 
@@ -330,7 +330,6 @@ export class BuildCache {
 	 */
 	private async getSourceFiles(
 		packagePath: string,
-		packageName: string,
 	): Promise<{ path: string; relative: string }[]> {
 		const allFiles = await fg(["**/*"], {
 			cwd: packagePath,
@@ -339,7 +338,7 @@ export class BuildCache {
 			ignore: ["node_modules/**", ".git/**", CACHE_DIR_NAME + "/**"],
 		});
 
-		const nonIgnored = await this.filterGitIgnored(allFiles, packagePath);
+		const nonIgnored = await this.filterGitIgnored(allFiles);
 
 		return nonIgnored.map((f) => ({
 			path: f,
@@ -350,10 +349,7 @@ export class BuildCache {
 	/**
 	 * Calculate hash for a package
 	 */
-	async calculatePackageHash(
-		pkg: PackageInfo,
-		packageMap: Map<string, PackageInfo>,
-	): Promise<string> {
+	async calculatePackageHash(pkg: PackageInfo): Promise<string> {
 		const fileIndex = this.loadPackageFileIndex(pkg.name);
 
 		// Hash package.json
@@ -361,7 +357,7 @@ export class BuildCache {
 		const packageJsonHash = this.hashFile(packageJsonPath, fileIndex, "package.json");
 
 		// Hash source files
-		const sourceFiles = await this.getSourceFiles(pkg.path, pkg.name);
+		const sourceFiles = await this.getSourceFiles(pkg.path);
 		const fileHashes: string[] = [];
 
 		for (const { path, relative: relPath } of sourceFiles) {
@@ -398,13 +394,13 @@ export class BuildCache {
 	/**
 	 * Check if a package is valid (cached and unchanged)
 	 */
-	async isValid(pkg: PackageInfo, packageMap: Map<string, PackageInfo>): Promise<boolean> {
+	async isValid(pkg: PackageInfo): Promise<boolean> {
 		const entry = this.packageCaches.get(pkg.name);
 		if (!entry) {
 			return false;
 		}
 
-		const currentHash = await this.calculatePackageHash(pkg, packageMap);
+		const currentHash = await this.calculatePackageHash(pkg);
 		return entry.inputHash === currentHash;
 	}
 
@@ -416,7 +412,7 @@ export class BuildCache {
 		packageMap: Map<string, PackageInfo>,
 		buildDuration: number,
 	): Promise<void> {
-		const inputHash = await this.calculatePackageHash(pkg, packageMap);
+		const inputHash = await this.calculatePackageHash(pkg);
 
 		// Collect dependency hashes
 		const dependencyHashes: Record<string, string | undefined> = {};

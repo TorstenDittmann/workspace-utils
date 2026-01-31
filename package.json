@@ -1,6 +1,6 @@
 {
 	"name": "workspace-utils",
-	"version": "1.1.0",
+	"version": "2.0.0",
 	"description": "A CLI tool to orchestrate scripts across monorepo workspaces (Bun, pnpm, npm) with parallel execution and dependency-aware builds.",
 	"keywords": [
 		"build-orchestration",

@@ -7,6 +7,7 @@ import { runCommand } from './src/commands/run.ts';
 import { buildCommand } from './src/commands/build.ts';
 import { devCommand } from './src/commands/dev.ts';
 import { cleanCommand } from './src/commands/clean.ts';
+import { cacheCommand } from './src/commands/cache.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -56,7 +57,7 @@ program
 	.description('Build packages in dependency order')
 	.option('-f, --filter <pattern>', 'Filter packages by pattern')
 	.option('-c, --concurrency <number>', 'Maximum number of concurrent builds', '4')
-	.option('--skip-unchanged', "Skip packages that haven't changed (future feature)", false)
+	.option('--no-skip-unchanged', 'Disable skipping unchanged packages (build all)')
 	.action(options => {
 		if (program.opts().ascii) {
 			process.env.WSU_ASCII = '1';
@@ -87,6 +88,17 @@ program
 			process.env.WSU_ASCII = '1';
 		}
 		return cleanCommand(options);
+	});
+
+// Cache command - manage build cache
+program
+	.command('cache [command]')
+	.description('Manage build cache (clear, status)')
+	.action((command, options) => {
+		if (program.opts().ascii) {
+			process.env.WSU_ASCII = '1';
+		}
+		return cacheCommand({ command, ...options });
 	});
 
 // Default to help if no command provided

@@ -1,9 +1,9 @@
 {
-  "name": "lib-core",
-  "version": "1.0.0",
-  "description": "Core library - no dependencies",
-  "scripts": {
-    "build": "echo 'Building lib-core...' && sleep 1 && echo 'lib-core complete!'"
-  },
-  "dependencies": {}
+	"name": "lib-core",
+	"version": "1.0.0",
+	"description": "Core library - no dependencies",
+	"scripts": {
+		"build": "echo 'Building lib-core...' && sleep 1 && echo 'lib-core complete!'"
+	},
+	"dependencies": {}
 }

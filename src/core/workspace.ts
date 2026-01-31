@@ -1,8 +1,8 @@
-import { readFileSync, existsSync } from 'fs';
-import { join, resolve, dirname } from 'path';
-import fg from 'fast-glob';
-import { PackageManagerDetector } from '../package-managers/index.ts';
-import type { PackageManager } from '../package-managers/index.ts';
+import { readFileSync, existsSync } from "fs";
+import { join, resolve, dirname } from "path";
+import fg from "fast-glob";
+import { PackageManagerDetector } from "../package-managers/index.ts";
+import type { PackageManager } from "../package-managers/index.ts";
 
 export interface PackageInfo {
 	name: string;
@@ -37,10 +37,10 @@ export class WorkspaceParser {
 	async parseWorkspace(): Promise<WorkspaceInfo> {
 		const workspaceConfig = this.readWorkspaceConfig();
 		const packagePaths = await this.resolvePackagePaths(workspaceConfig.packages || []);
-		const packages = await Promise.all(packagePaths.map(path => this.loadPackageInfo(path)));
+		const packages = await Promise.all(packagePaths.map((path) => this.loadPackageInfo(path)));
 
 		const packageMap = new Map<string, PackageInfo>();
-		packages.forEach(pkg => {
+		packages.forEach((pkg) => {
 			packageMap.set(pkg.name, pkg);
 		});
 
@@ -58,10 +58,10 @@ export class WorkspaceParser {
 	private findWorkspaceRoot(startDir: string): string {
 		let currentDir = startDir;
 		while (currentDir !== dirname(currentDir)) {
-			const packageJsonPath = join(currentDir, 'package.json');
+			const packageJsonPath = join(currentDir, "package.json");
 
 			if (existsSync(packageJsonPath)) {
-				const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as Record<
+				const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as Record<
 					string,
 					unknown
 				>;
@@ -71,7 +71,7 @@ export class WorkspaceParser {
 			}
 
 			// Check for package manager specific workspace files
-			const pnpmWorkspace = join(currentDir, 'pnpm-workspace.yaml');
+			const pnpmWorkspace = join(currentDir, "pnpm-workspace.yaml");
 			if (existsSync(pnpmWorkspace)) {
 				return currentDir;
 			}
@@ -94,7 +94,7 @@ export class WorkspaceParser {
 			throw new Error(
 				`Failed to parse workspace configuration with ${this.packageManager.name}: ${
 					error instanceof Error ? error.message : String(error)
-				}`
+				}`,
 			);
 		}
 	}
@@ -107,7 +107,7 @@ export class WorkspaceParser {
 
 		for (const pattern of patterns) {
 			// Handle negation patterns
-			if (pattern.startsWith('!')) {
+			if (pattern.startsWith("!")) {
 				continue; // Skip for now, we'll handle exclusions later
 			}
 
@@ -118,7 +118,7 @@ export class WorkspaceParser {
 			});
 
 			for (const path of paths) {
-				const packageJsonPath = join(this.workspaceRoot, path, 'package.json');
+				const packageJsonPath = join(this.workspaceRoot, path, "package.json");
 				if (existsSync(packageJsonPath)) {
 					packagePaths.push(resolve(this.workspaceRoot, path));
 				}
@@ -126,7 +126,7 @@ export class WorkspaceParser {
 		}
 
 		// Handle exclusion patterns
-		const exclusionPatterns = patterns.filter(p => p.startsWith('!'));
+		const exclusionPatterns = patterns.filter((p) => p.startsWith("!"));
 		if (exclusionPatterns.length > 0) {
 			const excludedPaths = new Set<string>();
 
@@ -138,12 +138,12 @@ export class WorkspaceParser {
 					absolute: false,
 				});
 
-				paths.forEach(path => {
+				paths.forEach((path) => {
 					excludedPaths.add(resolve(this.workspaceRoot, path));
 				});
 			}
 
-			return packagePaths.filter(path => !excludedPaths.has(path));
+			return packagePaths.filter((path) => !excludedPaths.has(path));
 		}
 
 		return Array.from(new Set(packagePaths)); // Remove duplicates
@@ -153,23 +153,25 @@ export class WorkspaceParser {
 	 * Load package.json and extract relevant information
 	 */
 	private async loadPackageInfo(packagePath: string): Promise<PackageInfo> {
-		const packageJsonPath = join(packagePath, 'package.json');
+		const packageJsonPath = join(packagePath, "package.json");
 
 		if (!existsSync(packageJsonPath)) {
 			throw new Error(`package.json not found in ${packagePath}`);
 		}
 
-		const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as Record<
+		const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as Record<
 			string,
 			unknown
 		>;
 
-		if (!packageJson.name || typeof packageJson.name !== 'string') {
+		if (!packageJson.name || typeof packageJson.name !== "string") {
 			throw new Error(`Package name not found in ${packageJsonPath}`);
 		}
 
 		const dependenciesObj = packageJson.dependencies as Record<string, string> | undefined;
-		const devDependenciesObj = packageJson.devDependencies as Record<string, string> | undefined;
+		const devDependenciesObj = packageJson.devDependencies as
+			| Record<string, string>
+			| undefined;
 		const scriptsObj = packageJson.scripts as Record<string, string> | undefined;
 
 		const dependencies = Object.keys(dependenciesObj || {});
@@ -196,13 +198,13 @@ export class WorkspaceParser {
 
 		// Convert glob pattern to regex
 		const regexPattern = pattern
-			.replace(/\*/g, '.*')
-			.replace(/\?/g, '.')
-			.replace(/\[([^\]]+)\]/g, '[$1]');
+			.replace(/\*/g, ".*")
+			.replace(/\?/g, ".")
+			.replace(/\[([^\]]+)\]/g, "[$1]");
 
 		const regex = new RegExp(`^${regexPattern}$`);
 
-		return packages.filter(pkg => regex.test(pkg.name));
+		return packages.filter((pkg) => regex.test(pkg.name));
 	}
 
 	/**
@@ -216,7 +218,7 @@ export class WorkspaceParser {
 	 * Get packages that have a specific script
 	 */
 	getPackagesWithScript(packages: PackageInfo[], scriptName: string): PackageInfo[] {
-		return packages.filter(pkg => this.hasScript(pkg, scriptName));
+		return packages.filter((pkg) => this.hasScript(pkg, scriptName));
 	}
 
 	/**

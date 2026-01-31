@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
+import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
+import { join } from "path";
 import {
 	buildDependencyGraph,
 	filterPackagesByScript,
@@ -12,25 +12,25 @@ import {
 	calculateExecutionStats,
 	isValidPackagePath,
 	extractPackageNameFromPath,
-} from './package-utils.ts';
-import type { PackageInfo } from '../core/workspace.ts';
-import { NpmPackageManager } from '../package-managers/npm.ts';
+} from "./package-utils.ts";
+import type { PackageInfo } from "../core/workspace.ts";
+import { NpmPackageManager } from "../package-managers/npm.ts";
 
-describe('package-utils', () => {
-	describe('buildDependencyGraph', () => {
-		it('should build a dependency graph from packages', () => {
+describe("package-utils", () => {
+	describe("buildDependencyGraph", () => {
+		it("should build a dependency graph from packages", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'app',
-					path: '/app',
+					name: "app",
+					path: "/app",
 					packageJson: {},
 					scripts: {},
-					dependencies: ['lib'],
+					dependencies: ["lib"],
 					devDependencies: [],
 				},
 				{
-					name: 'lib',
-					path: '/lib',
+					name: "lib",
+					path: "/lib",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
@@ -39,24 +39,24 @@ describe('package-utils', () => {
 			];
 
 			const graph = buildDependencyGraph(packages);
-			expect(graph.getPackages()).toContain('app');
-			expect(graph.getPackages()).toContain('lib');
-			expect(graph.getDependencies('app')).toContain('lib');
+			expect(graph.getPackages()).toContain("app");
+			expect(graph.getPackages()).toContain("lib");
+			expect(graph.getDependencies("app")).toContain("lib");
 		});
 
-		it('should include devDependencies in graph', () => {
+		it("should include devDependencies in graph", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'app',
-					path: '/app',
+					name: "app",
+					path: "/app",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
-					devDependencies: ['test-utils'],
+					devDependencies: ["test-utils"],
 				},
 				{
-					name: 'test-utils',
-					path: '/test-utils',
+					name: "test-utils",
+					path: "/test-utils",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
@@ -65,58 +65,58 @@ describe('package-utils', () => {
 			];
 
 			const graph = buildDependencyGraph(packages);
-			expect(graph.getDependencies('app')).toContain('test-utils');
+			expect(graph.getDependencies("app")).toContain("test-utils");
 		});
 
-		it('should ignore external dependencies not in workspace', () => {
+		it("should ignore external dependencies not in workspace", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'app',
-					path: '/app',
+					name: "app",
+					path: "/app",
 					packageJson: {},
 					scripts: {},
-					dependencies: ['external-lib'],
+					dependencies: ["external-lib"],
 					devDependencies: [],
 				},
 			];
 
 			const graph = buildDependencyGraph(packages);
-			expect(graph.getPackages()).toEqual(['app']);
-			expect(graph.getDependencies('app')).toEqual([]);
+			expect(graph.getPackages()).toEqual(["app"]);
+			expect(graph.getDependencies("app")).toEqual([]);
 		});
 	});
 
-	describe('filterPackagesByScript', () => {
-		it('should filter packages by script availability', () => {
+	describe("filterPackagesByScript", () => {
+		it("should filter packages by script availability", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
-					path: '/pkg1',
+					name: "pkg1",
+					path: "/pkg1",
 					packageJson: {},
-					scripts: { test: 'jest' },
+					scripts: { test: "jest" },
 					dependencies: [],
 					devDependencies: [],
 				},
 				{
-					name: 'pkg2',
-					path: '/pkg2',
+					name: "pkg2",
+					path: "/pkg2",
 					packageJson: {},
-					scripts: { build: 'tsc' },
+					scripts: { build: "tsc" },
 					dependencies: [],
 					devDependencies: [],
 				},
 			];
 
-			const filtered = filterPackagesByScript(packages, 'test');
+			const filtered = filterPackagesByScript(packages, "test");
 			expect(filtered).toHaveLength(1);
-			expect(filtered[0]!.name).toBe('pkg1');
+			expect(filtered[0]!.name).toBe("pkg1");
 		});
 
-		it('should return empty array when no packages have script', () => {
+		it("should return empty array when no packages have script", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
-					path: '/pkg1',
+					name: "pkg1",
+					path: "/pkg1",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
@@ -124,36 +124,36 @@ describe('package-utils', () => {
 				},
 			];
 
-			const filtered = filterPackagesByScript(packages, 'test');
+			const filtered = filterPackagesByScript(packages, "test");
 			expect(filtered).toHaveLength(0);
 		});
 	});
 
-	describe('buildScriptCommand', () => {
-		it('should build script command for npm package manager', () => {
+	describe("buildScriptCommand", () => {
+		it("should build script command for npm package manager", () => {
 			const npmManager = new NpmPackageManager();
-			const command = buildScriptCommand('test', npmManager);
+			const command = buildScriptCommand("test", npmManager);
 			expect(command).toEqual({
-				command: 'npm',
-				args: ['run', 'test'],
+				command: "npm",
+				args: ["run", "test"],
 			});
 		});
 	});
 
-	describe('validatePackagesHaveScript', () => {
-		it('should separate valid and invalid packages', () => {
+	describe("validatePackagesHaveScript", () => {
+		it("should separate valid and invalid packages", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
-					path: '/pkg1',
+					name: "pkg1",
+					path: "/pkg1",
 					packageJson: {},
-					scripts: { test: 'jest' },
+					scripts: { test: "jest" },
 					dependencies: [],
 					devDependencies: [],
 				},
 				{
-					name: 'pkg2',
-					path: '/pkg2',
+					name: "pkg2",
+					path: "/pkg2",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
@@ -161,18 +161,18 @@ describe('package-utils', () => {
 				},
 			];
 
-			const result = validatePackagesHaveScript(packages, 'test');
+			const result = validatePackagesHaveScript(packages, "test");
 			expect(result.valid).toHaveLength(1);
-			expect(result.valid[0]!.name).toBe('pkg1');
+			expect(result.valid[0]!.name).toBe("pkg1");
 			expect(result.invalid).toHaveLength(1);
-			expect(result.invalid[0]!.name).toBe('pkg2');
+			expect(result.invalid[0]!.name).toBe("pkg2");
 		});
 
-		it('should handle packages with no scripts field', () => {
+		it("should handle packages with no scripts field", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
-					path: '/pkg1',
+					name: "pkg1",
+					path: "/pkg1",
 					packageJson: {},
 					scripts: undefined as unknown as Record<string, string>,
 					dependencies: [],
@@ -180,20 +180,20 @@ describe('package-utils', () => {
 				},
 			];
 
-			const result = validatePackagesHaveScript(packages, 'test');
+			const result = validatePackagesHaveScript(packages, "test");
 			expect(result.valid).toHaveLength(0);
 			expect(result.invalid).toHaveLength(1);
 		});
 
-		it('should handle empty packages array', () => {
-			const result = validatePackagesHaveScript([], 'test');
+		it("should handle empty packages array", () => {
+			const result = validatePackagesHaveScript([], "test");
 			expect(result.valid).toHaveLength(0);
 			expect(result.invalid).toHaveLength(0);
 		});
 	});
 
-	describe('prepareCommandExecution', () => {
-		const testDir = join(process.cwd(), 'test-temp-utils');
+	describe("prepareCommandExecution", () => {
+		const testDir = join(process.cwd(), "test-temp-utils");
 		let npmManager: NpmPackageManager;
 
 		beforeEach(() => {
@@ -210,88 +210,88 @@ describe('package-utils', () => {
 			}
 		});
 
-		it('should prepare commands for execution', () => {
-			const pkgPath = join(testDir, 'pkg1');
+		it("should prepare commands for execution", () => {
+			const pkgPath = join(testDir, "pkg1");
 			mkdirSync(pkgPath, { recursive: true });
 			writeFileSync(
-				join(pkgPath, 'package.json'),
-				JSON.stringify({ name: 'pkg1', version: '1.0.0' })
+				join(pkgPath, "package.json"),
+				JSON.stringify({ name: "pkg1", version: "1.0.0" }),
 			);
 
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
+					name: "pkg1",
 					path: pkgPath,
-					packageJson: { name: 'pkg1', version: '1.0.0' },
-					scripts: { test: 'jest' },
+					packageJson: { name: "pkg1", version: "1.0.0" },
+					scripts: { test: "jest" },
 					dependencies: [],
 					devDependencies: [],
 				},
 			];
 
-			const commands = prepareCommandExecution(packages, 'test', npmManager);
+			const commands = prepareCommandExecution(packages, "test", npmManager);
 			expect(commands).toHaveLength(1);
-			expect(commands[0]!.command).toBe('npm');
-			expect(commands[0]!.args).toEqual(['run', 'test']);
+			expect(commands[0]!.command).toBe("npm");
+			expect(commands[0]!.args).toEqual(["run", "test"]);
 			expect(commands[0]!.options.cwd).toBe(pkgPath);
-			expect(commands[0]!.logOptions.prefix).toBe('pkg1');
+			expect(commands[0]!.logOptions.prefix).toBe("pkg1");
 		});
 
-		it('should throw error for invalid package path', () => {
+		it("should throw error for invalid package path", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
-					path: '/nonexistent/path',
+					name: "pkg1",
+					path: "/nonexistent/path",
 					packageJson: {},
-					scripts: { test: 'jest' },
+					scripts: { test: "jest" },
 					dependencies: [],
 					devDependencies: [],
 				},
 			];
 
-			expect(() => prepareCommandExecution(packages, 'test', npmManager)).toThrow(
-				'Invalid package path: /nonexistent/path'
+			expect(() => prepareCommandExecution(packages, "test", npmManager)).toThrow(
+				"Invalid package path: /nonexistent/path",
 			);
 		});
 	});
 
-	describe('formatPackageName', () => {
-		it('should format short package name', () => {
-			expect(formatPackageName('test')).toBe('test                ');
+	describe("formatPackageName", () => {
+		it("should format short package name", () => {
+			expect(formatPackageName("test")).toBe("test                ");
 		});
 
-		it('should truncate long package name', () => {
-			const longName = 'very-long-package-name-that-exceeds-limit';
-			expect(formatPackageName(longName, 20)).toBe('very-long-package...');
+		it("should truncate long package name", () => {
+			const longName = "very-long-package-name-that-exceeds-limit";
+			expect(formatPackageName(longName, 20)).toBe("very-long-package...");
 		});
 
-		it('should use custom max length', () => {
-			expect(formatPackageName('test', 10)).toBe('test      ');
+		it("should use custom max length", () => {
+			expect(formatPackageName("test", 10)).toBe("test      ");
 		});
 	});
 
-	describe('groupPackagesByScope', () => {
-		it('should group scoped packages', () => {
+	describe("groupPackagesByScope", () => {
+		it("should group scoped packages", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: '@scope/pkg1',
-					path: '/scope/pkg1',
+					name: "@scope/pkg1",
+					path: "/scope/pkg1",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
 					devDependencies: [],
 				},
 				{
-					name: '@scope/pkg2',
-					path: '/scope/pkg2',
+					name: "@scope/pkg2",
+					path: "/scope/pkg2",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
 					devDependencies: [],
 				},
 				{
-					name: 'unscoped-pkg',
-					path: '/unscoped-pkg',
+					name: "unscoped-pkg",
+					path: "/unscoped-pkg",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
@@ -300,15 +300,15 @@ describe('package-utils', () => {
 			];
 
 			const groups = groupPackagesByScope(packages);
-			expect(groups.get('@scope')).toHaveLength(2);
-			expect(groups.get('unscoped')).toHaveLength(1);
+			expect(groups.get("@scope")).toHaveLength(2);
+			expect(groups.get("unscoped")).toHaveLength(1);
 		});
 
-		it('should handle all unscoped packages', () => {
+		it("should handle all unscoped packages", () => {
 			const packages: PackageInfo[] = [
 				{
-					name: 'pkg1',
-					path: '/pkg1',
+					name: "pkg1",
+					path: "/pkg1",
 					packageJson: {},
 					scripts: {},
 					dependencies: [],
@@ -317,16 +317,16 @@ describe('package-utils', () => {
 			];
 
 			const groups = groupPackagesByScope(packages);
-			expect(groups.get('unscoped')).toHaveLength(1);
+			expect(groups.get("unscoped")).toHaveLength(1);
 		});
 	});
 
-	describe('calculateExecutionStats', () => {
-		it('should calculate execution statistics', () => {
+	describe("calculateExecutionStats", () => {
+		it("should calculate execution statistics", () => {
 			const results = [
-				{ success: true, exitCode: 0, packageName: 'pkg1', command: 'test', duration: 100 },
-				{ success: true, exitCode: 0, packageName: 'pkg2', command: 'test', duration: 200 },
-				{ success: false, exitCode: 1, packageName: 'pkg3', command: 'test', duration: 50 },
+				{ success: true, exitCode: 0, packageName: "pkg1", command: "test", duration: 100 },
+				{ success: true, exitCode: 0, packageName: "pkg2", command: "test", duration: 200 },
+				{ success: false, exitCode: 1, packageName: "pkg3", command: "test", duration: 50 },
 			];
 
 			const stats = calculateExecutionStats(results);
@@ -339,7 +339,7 @@ describe('package-utils', () => {
 			expect(stats.shortestDuration).toBe(50);
 		});
 
-		it('should handle empty results', () => {
+		it("should handle empty results", () => {
 			const stats = calculateExecutionStats([]);
 			expect(stats.totalPackages).toBe(0);
 			expect(stats.successfulPackages).toBe(0);
@@ -350,9 +350,9 @@ describe('package-utils', () => {
 			expect(stats.shortestDuration).toBe(0);
 		});
 
-		it('should handle all successful results', () => {
+		it("should handle all successful results", () => {
 			const results = [
-				{ success: true, exitCode: 0, packageName: 'pkg1', command: 'test', duration: 100 },
+				{ success: true, exitCode: 0, packageName: "pkg1", command: "test", duration: 100 },
 			];
 
 			const stats = calculateExecutionStats(results);
@@ -360,8 +360,8 @@ describe('package-utils', () => {
 		});
 	});
 
-	describe('isValidPackagePath', () => {
-		const testDir = join(process.cwd(), 'test-temp-valid');
+	describe("isValidPackagePath", () => {
+		const testDir = join(process.cwd(), "test-temp-valid");
 
 		beforeEach(() => {
 			if (existsSync(testDir)) {
@@ -376,53 +376,53 @@ describe('package-utils', () => {
 			}
 		});
 
-		it('should return true for valid package path', () => {
-			const pkgPath = join(testDir, 'valid-pkg');
+		it("should return true for valid package path", () => {
+			const pkgPath = join(testDir, "valid-pkg");
 			mkdirSync(pkgPath, { recursive: true });
 			writeFileSync(
-				join(pkgPath, 'package.json'),
-				JSON.stringify({ name: 'valid-pkg', version: '1.0.0' })
+				join(pkgPath, "package.json"),
+				JSON.stringify({ name: "valid-pkg", version: "1.0.0" }),
 			);
 
 			expect(isValidPackagePath(pkgPath)).toBe(true);
 		});
 
-		it('should return false for non-existent path', () => {
-			expect(isValidPackagePath('/nonexistent/path')).toBe(false);
+		it("should return false for non-existent path", () => {
+			expect(isValidPackagePath("/nonexistent/path")).toBe(false);
 		});
 
-		it('should return false for path without package.json', () => {
-			const pkgPath = join(testDir, 'no-package');
+		it("should return false for path without package.json", () => {
+			const pkgPath = join(testDir, "no-package");
 			mkdirSync(pkgPath, { recursive: true });
 			expect(isValidPackagePath(pkgPath)).toBe(false);
 		});
 
-		it('should return false for invalid package.json', () => {
-			const pkgPath = join(testDir, 'invalid-pkg');
+		it("should return false for invalid package.json", () => {
+			const pkgPath = join(testDir, "invalid-pkg");
 			mkdirSync(pkgPath, { recursive: true });
-			writeFileSync(join(pkgPath, 'package.json'), 'invalid json');
+			writeFileSync(join(pkgPath, "package.json"), "invalid json");
 			expect(isValidPackagePath(pkgPath)).toBe(false);
 		});
 
-		it('should return false for package.json without name', () => {
-			const pkgPath = join(testDir, 'no-name-pkg');
+		it("should return false for package.json without name", () => {
+			const pkgPath = join(testDir, "no-name-pkg");
 			mkdirSync(pkgPath, { recursive: true });
-			writeFileSync(join(pkgPath, 'package.json'), JSON.stringify({ version: '1.0.0' }));
+			writeFileSync(join(pkgPath, "package.json"), JSON.stringify({ version: "1.0.0" }));
 			expect(isValidPackagePath(pkgPath)).toBe(false);
 		});
 	});
 
-	describe('extractPackageNameFromPath', () => {
-		it('should extract package name from path', () => {
-			expect(extractPackageNameFromPath('/path/to/my-pkg')).toBe('my-pkg');
+	describe("extractPackageNameFromPath", () => {
+		it("should extract package name from path", () => {
+			expect(extractPackageNameFromPath("/path/to/my-pkg")).toBe("my-pkg");
 		});
 
-		it('should handle path without separators', () => {
-			expect(extractPackageNameFromPath('my-pkg')).toBe('my-pkg');
+		it("should handle path without separators", () => {
+			expect(extractPackageNameFromPath("my-pkg")).toBe("my-pkg");
 		});
 
-		it('should handle empty path', () => {
-			expect(extractPackageNameFromPath('')).toBe('');
+		it("should handle empty path", () => {
+			expect(extractPackageNameFromPath("")).toBe("");
 		});
 	});
 });

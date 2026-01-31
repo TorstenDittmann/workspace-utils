@@ -2,20 +2,20 @@
  * UI Components Library
  */
 
-import { formatDate, slugify } from '@test/shared-utils';
+import { formatDate, slugify } from "@test/shared-utils";
 
 export interface ButtonProps {
 	label: string;
 	onClick?: () => void;
-	variant?: 'primary' | 'secondary';
+	variant?: "primary" | "secondary";
 }
 
-export function Button({ label, onClick, variant = 'primary' }: ButtonProps) {
+export function Button({ label, onClick, variant = "primary" }: ButtonProps) {
 	return {
-		type: 'button',
+		type: "button",
 		label,
 		className: `btn btn-${variant}`,
-		onClick
+		onClick,
 	};
 }
 

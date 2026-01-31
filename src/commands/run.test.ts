@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
-import { runCommand } from './run.ts';
-import { spyOn } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
+import { join } from "path";
+import { runCommand } from "./run.ts";
+import { spyOn } from "bun:test";
 
-describe('runCommand', () => {
-	const testDir = join(process.cwd(), 'test-temp-run');
+describe("runCommand", () => {
+	const testDir = join(process.cwd(), "test-temp-run");
 
 	beforeEach(() => {
 		// Clean up test directory if it exists
@@ -20,7 +20,7 @@ describe('runCommand', () => {
 
 	afterEach(() => {
 		// Change back to original directory
-		process.chdir(process.cwd().replace('/test-temp-run', ''));
+		process.chdir(process.cwd().replace("/test-temp-run", ""));
 
 		// Clean up test directory
 		if (existsSync(testDir)) {
@@ -28,158 +28,158 @@ describe('runCommand', () => {
 		}
 	});
 
-	describe('Bun workspace', () => {
+	describe("Bun workspace", () => {
 		beforeEach(() => {
 			// Create Bun workspace
-			writeFileSync(join(testDir, 'bun.lockb'), '');
+			writeFileSync(join(testDir, "bun.lockb"), "");
 			writeFileSync(
-				join(testDir, 'package.json'),
+				join(testDir, "package.json"),
 				JSON.stringify({
-					name: 'test-workspace',
-					workspaces: ['packages/*'],
-				})
+					name: "test-workspace",
+					workspaces: ["packages/*"],
+				}),
 			);
 
 			// Create test packages
-			mkdirSync(join(testDir, 'packages', 'pkg1'), { recursive: true });
+			mkdirSync(join(testDir, "packages", "pkg1"), { recursive: true });
 			writeFileSync(
-				join(testDir, 'packages', 'pkg1', 'package.json'),
+				join(testDir, "packages", "pkg1", "package.json"),
 				JSON.stringify({
-					name: '@test/pkg1',
-					version: '1.0.0',
+					name: "@test/pkg1",
+					version: "1.0.0",
 					scripts: {
 						test: 'echo "Testing pkg1"',
 						build: 'echo "Building pkg1"',
 						lint: 'echo "Linting pkg1"',
 					},
-				})
+				}),
 			);
 
-			mkdirSync(join(testDir, 'packages', 'pkg2'), { recursive: true });
+			mkdirSync(join(testDir, "packages", "pkg2"), { recursive: true });
 			writeFileSync(
-				join(testDir, 'packages', 'pkg2', 'package.json'),
+				join(testDir, "packages", "pkg2", "package.json"),
 				JSON.stringify({
-					name: '@test/pkg2',
-					version: '1.0.0',
+					name: "@test/pkg2",
+					version: "1.0.0",
 					scripts: {
 						test: 'echo "Testing pkg2"',
 						build: 'echo "Building pkg2"',
 					},
-				})
+				}),
 			);
 		});
 
-		it('should run test script in parallel by default', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should run test script in parallel by default", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = {};
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[TOOL] Package manager: bun')
+				expect.stringContaining("[TOOL] Package manager: bun"),
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[FAST] Execution mode: parallel (concurrency: 4)')
+				expect.stringContaining("[FAST] Execution mode: parallel (concurrency: 4)"),
 			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
 		});
 
-		it('should run script sequentially when --sequential flag is used', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should run script sequentially when --sequential flag is used", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = { sequential: true };
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[FAST] Execution mode: sequential')
+				expect.stringContaining("[FAST] Execution mode: sequential"),
 			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
 		});
 
-		it('should filter packages when filter option is provided', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should filter packages when filter option is provided", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
-			const options = { filter: '*pkg1*' };
+			const options = { filter: "*pkg1*" };
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[FIND] Filtered to 1 packages matching "*pkg1*"')
+				expect.stringContaining('[FIND] Filtered to 1 packages matching "*pkg1*"'),
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[OK] Running "test" in 1 packages:')
+				expect.stringContaining('[OK] Running "test" in 1 packages:'),
 			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
 		});
 
-		it('should handle packages without the specified script', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should handle packages without the specified script", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = {};
 
 			try {
-				await runCommand('lint', options);
+				await runCommand("lint", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			// Should still run the script on packages that have it
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[OK] Running "lint" in 1 packages:')
+				expect.stringContaining('[OK] Running "lint" in 1 packages:'),
 			);
 
 			consoleSpy.mockRestore();
 			processExitSpy.mockRestore();
 		});
 
-		it('should exit with error when no packages have the script', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should exit with error when no packages have the script", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = {};
 
 			try {
-				await runCommand('nonexistent', options);
+				await runCommand("nonexistent", options);
 			} catch (error) {
-				expect((error as Error).message).toBe('process.exit called');
+				expect((error as Error).message).toBe("process.exit called");
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[ERR] No packages found with the "nonexistent" script.')
+				expect.stringContaining('[ERR] No packages found with the "nonexistent" script.'),
 			);
 			expect(processExitSpy).toHaveBeenCalledWith(1);
 
@@ -187,22 +187,22 @@ describe('runCommand', () => {
 			processExitSpy.mockRestore();
 		});
 
-		it('should use custom concurrency when specified', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should use custom concurrency when specified", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
-			const options = { concurrency: '8' };
+			const options = { concurrency: "8" };
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[FAST] Execution mode: parallel (concurrency: 8)')
+				expect.stringContaining("[FAST] Execution mode: parallel (concurrency: 8)"),
 			);
 
 			consoleSpy.mockRestore();
@@ -210,42 +210,42 @@ describe('runCommand', () => {
 		});
 	});
 
-	describe('pnpm workspace', () => {
+	describe("pnpm workspace", () => {
 		beforeEach(() => {
 			// Create pnpm workspace
-			writeFileSync(join(testDir, 'pnpm-lock.yaml'), 'lockfileVersion: 6.0');
-			writeFileSync(join(testDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*');
+			writeFileSync(join(testDir, "pnpm-lock.yaml"), "lockfileVersion: 6.0");
+			writeFileSync(join(testDir, "pnpm-workspace.yaml"), "packages:\n  - packages/*");
 
 			// Create test package
-			mkdirSync(join(testDir, 'packages', 'utils'), { recursive: true });
+			mkdirSync(join(testDir, "packages", "utils"), { recursive: true });
 			writeFileSync(
-				join(testDir, 'packages', 'utils', 'package.json'),
+				join(testDir, "packages", "utils", "package.json"),
 				JSON.stringify({
-					name: '@test/utils',
-					version: '1.0.0',
+					name: "@test/utils",
+					version: "1.0.0",
 					scripts: {
 						test: 'echo "Testing utils with pnpm"',
 					},
-				})
+				}),
 			);
 		});
 
-		it('should detect pnpm as package manager', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should detect pnpm as package manager", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = {};
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[TOOL] Package manager: pnpm')
+				expect.stringContaining("[TOOL] Package manager: pnpm"),
 			);
 
 			consoleSpy.mockRestore();
@@ -253,48 +253,48 @@ describe('runCommand', () => {
 		});
 	});
 
-	describe('npm workspace', () => {
+	describe("npm workspace", () => {
 		beforeEach(() => {
 			// Create npm workspace
-			writeFileSync(join(testDir, 'package-lock.json'), '{}');
+			writeFileSync(join(testDir, "package-lock.json"), "{}");
 			writeFileSync(
-				join(testDir, 'package.json'),
+				join(testDir, "package.json"),
 				JSON.stringify({
-					name: 'test-workspace',
-					workspaces: ['libs/*'],
-				})
+					name: "test-workspace",
+					workspaces: ["libs/*"],
+				}),
 			);
 
 			// Create test package
-			mkdirSync(join(testDir, 'libs', 'core'), { recursive: true });
+			mkdirSync(join(testDir, "libs", "core"), { recursive: true });
 			writeFileSync(
-				join(testDir, 'libs', 'core', 'package.json'),
+				join(testDir, "libs", "core", "package.json"),
 				JSON.stringify({
-					name: 'core',
-					version: '1.0.0',
+					name: "core",
+					version: "1.0.0",
 					scripts: {
 						test: 'echo "Testing core with npm"',
 					},
-				})
+				}),
 			);
 		});
 
-		it('should detect npm as package manager', async () => {
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+		it("should detect npm as package manager", async () => {
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = {};
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch {
 				// Expected to throw due to process.exit mock
 			}
 
 			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('[TOOL] Package manager: npm')
+				expect.stringContaining("[TOOL] Package manager: npm"),
 			);
 
 			consoleSpy.mockRestore();
@@ -302,30 +302,30 @@ describe('runCommand', () => {
 		});
 	});
 
-	describe('error handling', () => {
-		it('should handle workspace parsing errors gracefully', async () => {
+	describe("error handling", () => {
+		it("should handle workspace parsing errors gracefully", async () => {
 			// Create invalid workspace (no workspaces config)
 			writeFileSync(
-				join(testDir, 'package.json'),
+				join(testDir, "package.json"),
 				JSON.stringify({
-					name: 'invalid-workspace',
-				})
+					name: "invalid-workspace",
+				}),
 			);
 
-			const consoleSpy = spyOn(console, 'log');
-			const processExitSpy = spyOn(process, 'exit').mockImplementation(() => {
-				throw new Error('process.exit called');
+			const consoleSpy = spyOn(console, "log");
+			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("process.exit called");
 			});
 
 			const options = {};
 
 			try {
-				await runCommand('test', options);
+				await runCommand("test", options);
 			} catch (error) {
-				expect((error as Error).message).toBe('process.exit called');
+				expect((error as Error).message).toBe("process.exit called");
 			}
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[BOOM] Error:'));
+			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("[BOOM] Error:"));
 			expect(processExitSpy).toHaveBeenCalledWith(1);
 
 			consoleSpy.mockRestore();

@@ -102,7 +102,7 @@ export class DependencyGraph {
 		// Detect cycles
 		const cycles: string[][] = [];
 		if (result.length !== this.nodes.size) {
-			const remainingNodes = this.getPackages().filter(pkg => !result.includes(pkg));
+			const remainingNodes = this.getPackages().filter((pkg) => !result.includes(pkg));
 			const detectedCycles = this.detectCycles(remainingNodes);
 			cycles.push(...detectedCycles);
 		}
@@ -162,7 +162,7 @@ export class DependencyGraph {
 
 		if (cycles.length > 0) {
 			throw new Error(
-				`Circular dependencies detected: ${cycles.map(cycle => cycle.join(' -> ')).join(', ')}`
+				`Circular dependencies detected: ${cycles.map((cycle) => cycle.join(" -> ")).join(", ")}`,
 			);
 		}
 
@@ -179,7 +179,7 @@ export class DependencyGraph {
 
 				// Check if all dependencies are already processed
 				const dependencies = this.getDependencies(packageName);
-				const allDepsProcessed = dependencies.every(dep => processed.has(dep));
+				const allDepsProcessed = dependencies.every((dep) => processed.has(dep));
 
 				if (allDepsProcessed) {
 					currentBatch.push(packageName);
@@ -188,11 +188,11 @@ export class DependencyGraph {
 
 			if (currentBatch.length === 0) {
 				// This shouldn't happen if topological sort worked correctly
-				throw new Error('Unable to determine build order - possible circular dependency');
+				throw new Error("Unable to determine build order - possible circular dependency");
 			}
 
 			batches.push(currentBatch);
-			currentBatch.forEach(pkg => processed.add(pkg));
+			currentBatch.forEach((pkg) => processed.add(pkg));
 		}
 
 		return batches;
@@ -231,31 +231,31 @@ export class DependencyGraph {
 	 * Get packages that have no dependencies (root packages)
 	 */
 	getRootPackages(): string[] {
-		return this.getPackages().filter(pkg => this.getDependencies(pkg).length === 0);
+		return this.getPackages().filter((pkg) => this.getDependencies(pkg).length === 0);
 	}
 
 	/**
 	 * Get packages that have no dependents (leaf packages)
 	 */
 	getLeafPackages(): string[] {
-		return this.getPackages().filter(pkg => this.getDependents(pkg).length === 0);
+		return this.getPackages().filter((pkg) => this.getDependents(pkg).length === 0);
 	}
 
 	/**
 	 * Print the dependency graph for debugging
 	 */
 	printGraph(): void {
-		console.log('\n📊 Dependency Graph:');
+		console.log("\n📊 Dependency Graph:");
 		for (const [packageName, node] of this.nodes) {
 			const deps = Array.from(node.dependencies);
 			const dependents = Array.from(node.dependents);
 
 			console.log(`\n📦 ${packageName}`);
 			if (deps.length > 0) {
-				console.log(`  ⬇️  Dependencies: ${deps.join(', ')}`);
+				console.log(`  ⬇️  Dependencies: ${deps.join(", ")}`);
 			}
 			if (dependents.length > 0) {
-				console.log(`  ⬆️  Dependents: ${dependents.join(', ')}`);
+				console.log(`  ⬆️  Dependents: ${dependents.join(", ")}`);
 			}
 		}
 	}

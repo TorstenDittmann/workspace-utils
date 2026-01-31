@@ -1,7 +1,7 @@
-import type { PackageInfo, WorkspaceInfo } from '../core/workspace.ts';
-import { DependencyGraph } from '../core/dependency-graph.ts';
-import type { ProcessResult } from '../core/process-runner.ts';
-import type { PackageManager } from '../package-managers/index.ts';
+import type { PackageInfo, WorkspaceInfo } from "../core/workspace.ts";
+import { DependencyGraph } from "../core/dependency-graph.ts";
+import type { ProcessResult } from "../core/process-runner.ts";
+import type { PackageManager } from "../package-managers/index.ts";
 
 export interface BuildContext {
 	workspace: WorkspaceInfo;
@@ -14,19 +14,19 @@ export interface BuildContext {
  */
 export function buildDependencyGraph(packages: PackageInfo[]): DependencyGraph {
 	const graph = new DependencyGraph();
-	const packageNames = new Set(packages.map(pkg => pkg.name));
+	const packageNames = new Set(packages.map((pkg) => pkg.name));
 
 	// Add all packages to the graph
-	packages.forEach(pkg => {
+	packages.forEach((pkg) => {
 		graph.addPackage(pkg.name);
 	});
 
 	// Add dependency relationships
-	packages.forEach(pkg => {
+	packages.forEach((pkg) => {
 		// Check both dependencies and devDependencies
 		const allDeps = [...pkg.dependencies, ...pkg.devDependencies];
 
-		allDeps.forEach(depName => {
+		allDeps.forEach((depName) => {
 			// Only add dependency if it's also a workspace package
 			if (packageNames.has(depName)) {
 				graph.addDependency(pkg.name, depName);
@@ -41,7 +41,7 @@ export function buildDependencyGraph(packages: PackageInfo[]): DependencyGraph {
  * Filter packages by script availability
  */
 export function filterPackagesByScript(packages: PackageInfo[], scriptName: string): PackageInfo[] {
-	return packages.filter(pkg => pkg.scripts[scriptName]);
+	return packages.filter((pkg) => pkg.scripts[scriptName]);
 }
 
 /**
@@ -49,7 +49,7 @@ export function filterPackagesByScript(packages: PackageInfo[], scriptName: stri
  */
 export function buildScriptCommand(
 	scriptName: string,
-	packageManager: PackageManager
+	packageManager: PackageManager,
 ): { command: string; args: string[] } {
 	return packageManager.getRunCommand(scriptName);
 }
@@ -59,7 +59,7 @@ export function buildScriptCommand(
  */
 export function validatePackagesHaveScript(
 	packages: PackageInfo[],
-	scriptName: string
+	scriptName: string,
 ): {
 	valid: PackageInfo[];
 	invalid: PackageInfo[];
@@ -67,8 +67,8 @@ export function validatePackagesHaveScript(
 	const valid: PackageInfo[] = [];
 	const invalid: PackageInfo[] = [];
 
-	packages.forEach(pkg => {
-		if (pkg.scripts && typeof pkg.scripts === 'object' && pkg.scripts[scriptName]) {
+	packages.forEach((pkg) => {
+		if (pkg.scripts && typeof pkg.scripts === "object" && pkg.scripts[scriptName]) {
 			valid.push(pkg);
 		} else {
 			invalid.push(pkg);
@@ -84,11 +84,11 @@ export function validatePackagesHaveScript(
 export function prepareCommandExecution(
 	packages: PackageInfo[],
 	scriptName: string,
-	packageManager: PackageManager
+	packageManager: PackageManager,
 ) {
 	const { command, args } = buildScriptCommand(scriptName, packageManager);
 
-	return packages.map(pkg => {
+	return packages.map((pkg) => {
 		if (!isValidPackagePath(pkg.path)) {
 			throw new Error(`Invalid package path: ${pkg.path}`);
 		}
@@ -100,8 +100,8 @@ export function prepareCommandExecution(
 				cwd: pkg.path,
 				env: {
 					// Ensure consistent environment
-					FORCE_COLOR: '1',
-					NODE_ENV: process.env.NODE_ENV || 'development',
+					FORCE_COLOR: "1",
+					NODE_ENV: process.env.NODE_ENV || "development",
 				},
 			},
 			logOptions: {
@@ -117,19 +117,19 @@ export function prepareCommandExecution(
  * Simple color assignment for packages
  */
 const colorPalette = [
-	'red',
-	'green',
-	'yellow',
-	'blue',
-	'magenta',
-	'cyan',
-	'gray',
-	'redBright',
-	'greenBright',
-	'yellowBright',
-	'blueBright',
-	'magentaBright',
-	'cyanBright',
+	"red",
+	"green",
+	"yellow",
+	"blue",
+	"magenta",
+	"cyan",
+	"gray",
+	"redBright",
+	"greenBright",
+	"yellowBright",
+	"blueBright",
+	"magentaBright",
+	"cyanBright",
 ];
 
 const packageColors = new Map<string, string>();
@@ -143,7 +143,7 @@ function getPackageColor(packageName: string): string {
 		}
 		colorIndex++;
 	}
-	return packageColors.get(packageName) || 'white';
+	return packageColors.get(packageName) || "white";
 }
 
 /**
@@ -155,7 +155,7 @@ export function formatPackageName(packageName: string, maxLength = 20): string {
 	}
 
 	// Truncate and add ellipsis
-	return packageName.substring(0, maxLength - 3) + '...';
+	return packageName.substring(0, maxLength - 3) + "...";
 }
 
 /**
@@ -164,8 +164,8 @@ export function formatPackageName(packageName: string, maxLength = 20): string {
 export function groupPackagesByScope(packages: PackageInfo[]): Map<string, PackageInfo[]> {
 	const groups = new Map<string, PackageInfo[]>();
 
-	packages.forEach(pkg => {
-		const scope = pkg.name.startsWith('@') ? pkg.name.split('/')[0] || 'unscoped' : 'unscoped';
+	packages.forEach((pkg) => {
+		const scope = pkg.name.startsWith("@") ? pkg.name.split("/")[0] || "unscoped" : "unscoped";
 
 		if (!groups.has(scope)) {
 			groups.set(scope, []);
@@ -193,9 +193,9 @@ export interface ExecutionStats {
 }
 
 export function calculateExecutionStats(results: ProcessResult[]): ExecutionStats {
-	const successful = results.filter(r => r.success);
-	const failed = results.filter(r => !r.success);
-	const durations = results.map(r => r.duration);
+	const successful = results.filter((r) => r.success);
+	const failed = results.filter((r) => !r.success);
+	const durations = results.map((r) => r.duration);
 	const totalDuration = durations.reduce((sum, d) => sum + d, 0);
 	const avgDuration = durations.length > 0 ? Math.round(totalDuration / durations.length) : 0;
 	const maxDuration = durations.length > 0 ? Math.max(...durations) : 0;
@@ -216,19 +216,19 @@ export function calculateExecutionStats(results: ProcessResult[]): ExecutionStat
  * Check if a package path exists and is valid
  */
 export function isValidPackagePath(packagePath: string): boolean {
-	const fs = require('fs');
-	const path = require('path');
+	const fs = require("fs");
+	const path = require("path");
 
 	try {
-		const packageJsonPath = path.join(packagePath, 'package.json');
+		const packageJsonPath = path.join(packagePath, "package.json");
 		if (!fs.existsSync(packageJsonPath)) {
 			return false;
 		}
 
 		// Try to parse the package.json to ensure it's valid
-		const content = fs.readFileSync(packageJsonPath, 'utf8');
+		const content = fs.readFileSync(packageJsonPath, "utf8");
 		const pkg = JSON.parse(content);
-		return typeof pkg === 'object' && pkg !== null && typeof pkg.name === 'string';
+		return typeof pkg === "object" && pkg !== null && typeof pkg.name === "string";
 	} catch {
 		return false;
 	}
@@ -238,6 +238,6 @@ export function isValidPackagePath(packagePath: string): boolean {
  * Extract package name from path (for display purposes)
  */
 export function extractPackageNameFromPath(packagePath: string): string {
-	const parts = packagePath.split('/');
-	return parts[parts.length - 1] || '';
+	const parts = packagePath.split("/");
+	return parts[parts.length - 1] || "";
 }

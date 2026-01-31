@@ -1,8 +1,8 @@
 {
 	"name": "test-pnpm-workspace",
 	"version": "1.0.0",
-	"description": "Test pnpm workspace for workspace-utils CLI tool",
 	"private": true,
+	"description": "Test pnpm workspace for workspace-utils CLI tool",
 	"scripts": {
 		"build": "echo 'Building all packages with pnpm...'",
 		"test": "echo 'Running all tests with pnpm...'",

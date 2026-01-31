@@ -1,9 +1,9 @@
-import { existsSync } from 'fs';
-import { join } from 'path';
-import type { PackageManager, PackageManagerDetectionResult } from './types.ts';
-import { BunPackageManager } from './bun.ts';
-import { PnpmPackageManager } from './pnpm.ts';
-import { NpmPackageManager } from './npm.ts';
+import { existsSync } from "fs";
+import { join } from "path";
+import type { PackageManager, PackageManagerDetectionResult } from "./types.ts";
+import { BunPackageManager } from "./bun.ts";
+import { PnpmPackageManager } from "./pnpm.ts";
+import { NpmPackageManager } from "./npm.ts";
 
 export class PackageManagerDetector {
 	private static readonly packageManagers = [
@@ -31,7 +31,7 @@ export class PackageManagerDetector {
 		const [result] = results;
 		if (!result) {
 			throw new Error(
-				'No package manager detected. Please ensure you have a lock file (bun.lockb, pnpm-lock.yaml, or package-lock.json) or workspace configuration in your project.'
+				"No package manager detected. Please ensure you have a lock file (bun.lockb, pnpm-lock.yaml, or package-lock.json) or workspace configuration in your project.",
 			);
 		}
 
@@ -42,7 +42,7 @@ export class PackageManagerDetector {
 	 * Get a specific package manager by name
 	 */
 	static getPackageManager(name: string): PackageManager {
-		const pm = this.packageManagers.find(pm => pm.name === name);
+		const pm = this.packageManagers.find((pm) => pm.name === name);
 		if (!pm) {
 			throw new Error(`Unknown package manager: ${name}`);
 		}
@@ -70,18 +70,18 @@ export class PackageManagerDetector {
 
 		// Check for package manager specific files
 		switch (pm.name) {
-			case 'bun':
+			case "bun":
 				// Check for both bun.lock (text) and bun.lockb (binary) formats
-				if (existsSync(join(workspaceRoot, 'bun.lock'))) confidence += 100;
-				if (existsSync(join(workspaceRoot, 'bun.lockb'))) confidence += 100;
-				if (existsSync(join(workspaceRoot, 'bunfig.toml'))) confidence += 50;
+				if (existsSync(join(workspaceRoot, "bun.lock"))) confidence += 100;
+				if (existsSync(join(workspaceRoot, "bun.lockb"))) confidence += 100;
+				if (existsSync(join(workspaceRoot, "bunfig.toml"))) confidence += 50;
 				break;
-			case 'pnpm':
-				if (existsSync(join(workspaceRoot, 'pnpm-workspace.yaml'))) confidence += 80;
-				if (existsSync(join(workspaceRoot, '.pnpmfile.cjs'))) confidence += 30;
+			case "pnpm":
+				if (existsSync(join(workspaceRoot, "pnpm-workspace.yaml"))) confidence += 80;
+				if (existsSync(join(workspaceRoot, ".pnpmfile.cjs"))) confidence += 30;
 				break;
-			case 'npm':
-				if (existsSync(join(workspaceRoot, '.npmrc'))) confidence += 30;
+			case "npm":
+				if (existsSync(join(workspaceRoot, ".npmrc"))) confidence += 30;
 				break;
 		}
 
@@ -101,11 +101,11 @@ export class PackageManagerDetector {
 	 */
 	static async isPackageManagerAvailable(name: string): Promise<boolean> {
 		try {
-			const { spawn } = await import('child_process');
-			return new Promise(resolve => {
-				const child = spawn(name, ['--version'], { stdio: 'ignore' });
-				child.on('close', code => resolve(code === 0));
-				child.on('error', () => resolve(false));
+			const { spawn } = await import("child_process");
+			return new Promise((resolve) => {
+				const child = spawn(name, ["--version"], { stdio: "ignore" });
+				child.on("close", (code) => resolve(code === 0));
+				child.on("error", () => resolve(false));
 			});
 		} catch {
 			return false;

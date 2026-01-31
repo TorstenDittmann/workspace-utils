@@ -1,11 +1,11 @@
 {
-  "name": "lib-utils",
-  "version": "1.0.0",
-  "description": "Utils library - depends on lib-core",
-  "scripts": {
-    "build": "echo 'Building lib-utils...' && sleep 1 && echo 'lib-utils complete!'"
-  },
-  "dependencies": {
-    "lib-core": "workspace:*"
-  }
+	"name": "lib-utils",
+	"version": "1.0.0",
+	"description": "Utils library - depends on lib-core",
+	"scripts": {
+		"build": "echo 'Building lib-utils...' && sleep 1 && echo 'lib-utils complete!'"
+	},
+	"dependencies": {
+		"lib-core": "workspace:*"
+	}
 }

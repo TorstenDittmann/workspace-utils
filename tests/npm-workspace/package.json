@@ -1,8 +1,8 @@
 {
 	"name": "test-npm-workspace",
 	"version": "1.0.0",
-	"description": "Test npm workspace for workspace-utils CLI tool",
 	"private": true,
+	"description": "Test npm workspace for workspace-utils CLI tool",
 	"workspaces": [
 		"packages/*",
 		"apps/*"

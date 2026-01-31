@@ -1,8 +1,8 @@
 await Bun.build({
-	entrypoints: ['index.ts'],
-	outdir: 'dist',
+	entrypoints: ["index.ts"],
+	outdir: "dist",
 	minify: true,
-	target: 'node',
+	target: "node",
 });
 
-console.log('Build succeeded');
+console.log("Build succeeded");

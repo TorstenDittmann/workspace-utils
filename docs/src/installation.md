@@ -50,10 +50,10 @@ npm run lint     # Run linting across packages
 
 - **Node.js**: Version 18 or higher
 - **Package Manager**: Any of the following:
-  - npm (comes with Node.js)
-  - pnpm (install with `npm install -g pnpm`)
-  - Bun (install from [bun.sh](https://bun.sh))
-  - Yarn (install with `npm install -g yarn`)
+    - npm (comes with Node.js)
+    - pnpm (install with `npm install -g pnpm`)
+    - Bun (install from [bun.sh](https://bun.sh))
+    - Yarn (install with `npm install -g yarn`)
 
 ## Verification
 
@@ -89,8 +89,8 @@ workspace-utils works with any monorepo that has one of the following configurat
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - 'packages/*'
-  - 'apps/*'
+    - "packages/*"
+    - "apps/*"
 ```
 
 ### npm Workspaces

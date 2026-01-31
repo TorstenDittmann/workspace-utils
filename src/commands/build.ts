@@ -6,6 +6,7 @@ import {
 	prepareCommandExecution,
 } from '../utils/package-utils.ts';
 import { ProcessRunner } from '../core/process-runner.ts';
+import { BuildCache } from '../core/cache.ts';
 import { Output } from '../utils/output.ts';
 import type { PackageInfo } from '../core/workspace.ts';
 
@@ -51,6 +52,17 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		Output.dim(`Workspace root: ${workspace.root}`, 'folder');
 		Output.dim(`Found ${workspace.packages.length} packages\n`, 'package');
 
+		// Initialize cache if skipUnchanged is enabled
+		let cache: BuildCache | undefined;
+		const skippedPackages: PackageInfo[] = [];
+		const packagesToBuild: PackageInfo[] = [];
+
+		if (options.skipUnchanged !== false) {
+			cache = new BuildCache(workspace.root);
+			await cache.initialize();
+			Output.log('Build cache enabled - checking for unchanged packages...', 'chart', 'blue');
+		}
+
 		// Filter packages if pattern provided
 		let targetPackages = workspace.packages;
 		if (options.filter) {
@@ -95,12 +107,49 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 			console.log();
 		}
 
-		// Build dependency graph
+		// Check cache for each package (if enabled)
+		if (cache && options.skipUnchanged !== false) {
+			const packageMap = new Map(packagesWithBuild.map(pkg => [pkg.name, pkg]));
+
+			for (const pkg of packagesWithBuild) {
+				const isCached = await cache.isValid(pkg, packageMap);
+				if (isCached) {
+					skippedPackages.push(pkg);
+				} else {
+					packagesToBuild.push(pkg);
+				}
+			}
+
+			// Show cache status
+			if (skippedPackages.length > 0) {
+				Output.success(`${skippedPackages.length} packages unchanged (cached) - skipping build`);
+				skippedPackages.forEach(pkg => {
+					Output.listItem(pkg.name);
+				});
+				console.log();
+			}
+
+			if (packagesToBuild.length === 0) {
+				Output.celebrate('All packages are up to date!');
+				return;
+			}
+
+			Output.log(`Building ${packagesToBuild.length} packages:`, 'construction', 'blue');
+			packagesToBuild.forEach(pkg => {
+				Output.listItem(pkg.name);
+			});
+			console.log();
+		} else {
+			// No caching, build all
+			packagesToBuild.push(...packagesWithBuild);
+		}
+
+		// Build dependency graph for packages that need building
 		Output.log('Building dependency graph...', 'chart', 'blue');
-		const dependencyGraph = buildDependencyGraph(packagesWithBuild);
+		const dependencyGraph = buildDependencyGraph(packagesToBuild);
 
 		// Filter graph to only include packages that need to be built
-		const packageNames = packagesWithBuild.map(pkg => pkg.name);
+		const packageNames = packagesToBuild.map(pkg => pkg.name);
 		const filteredGraph = dependencyGraph.filterGraph(packageNames);
 
 		// Get build batches (topological order)
@@ -131,7 +180,7 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		console.log();
 
 		// Prepare commands organized by batches
-		const packageMap = new Map(packagesWithBuild.map(pkg => [pkg.name, pkg]));
+		const packageMap = new Map(packagesToBuild.map(pkg => [pkg.name, pkg]));
 		const commandBatches = buildBatches.map(batch => {
 			return batch
 				.map(packageName => packageMap.get(packageName))
@@ -148,11 +197,36 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		const allResults = await ProcessRunner.runBatches(commandBatches, concurrency);
 		const totalDuration = Date.now() - startTime;
 
+		// Update cache for successful builds
+		if (cache && options.skipUnchanged !== false) {
+			const successfulBuilds = allResults.filter(r => r.success);
+			const allPackagesMap = new Map(workspace.packages.map(pkg => [pkg.name, pkg]));
+
+			for (const result of successfulBuilds) {
+				const pkg = packageMap.get(result.packageName);
+				if (pkg) {
+					await cache.update(pkg, allPackagesMap, result.duration);
+				}
+			}
+
+			// Invalidate dependents of rebuilt packages (conservative approach)
+			for (const result of successfulBuilds) {
+				cache.invalidateDependents(result.packageName, workspace.packages);
+			}
+
+			Output.log(`Updated cache for ${successfulBuilds.length} packages`, 'chart', 'blue');
+		}
+
 		// Print final summary
 		const successful = allResults.filter(r => r.success);
 		const failed = allResults.filter(r => !r.success);
+		const totalPackages = successful.length + skippedPackages.length;
 
-		Output.buildSummary(successful.length, failed.length, totalDuration);
+		Output.buildSummary(totalPackages, failed.length, totalDuration);
+
+		if (skippedPackages.length > 0) {
+			Output.dim(`Skipped (cached): ${skippedPackages.length} packages`, 'checkmark');
+		}
 
 		if (failed.length > 0) {
 			console.log(pc.red('\nFailed packages:'));

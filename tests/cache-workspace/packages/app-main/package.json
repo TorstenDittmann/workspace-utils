@@ -1,0 +1,11 @@
+{
+  "name": "app-main",
+  "version": "1.0.0",
+  "description": "Main app - depends on lib-utils (and transitively lib-core)",
+  "scripts": {
+    "build": "echo 'Building app-main...' && sleep 1 && echo 'app-main complete!'"
+  },
+  "dependencies": {
+    "lib-utils": "workspace:*"
+  }
+}

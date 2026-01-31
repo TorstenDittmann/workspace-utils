@@ -1,0 +1,12 @@
+{
+  "name": "cache-test-workspace",
+  "version": "1.0.0",
+  "description": "Test workspace for cache feature",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "echo 'Building workspace...'"
+  }
+}

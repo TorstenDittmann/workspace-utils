@@ -73,7 +73,7 @@ describe("buildCommand", () => {
 					receivedBatches.push(
 						batch
 							.filter((cmd) => Boolean(cmd))
-							.map((cmd) => cmd?.logOptions.prefix ?? ""),
+							.map((cmd) => cmd.logOptions.prefix),
 					);
 				}
 
@@ -83,8 +83,8 @@ describe("buildCommand", () => {
 					.map((cmd) => ({
 						success: true,
 						exitCode: 0,
-						packageName: cmd?.logOptions.prefix ?? "",
-						command: [cmd?.command, ...(cmd?.args || [])].join(" "),
+						packageName: cmd.logOptions.prefix,
+						command: [cmd.command, ...(cmd.args)].join(" "),
 						duration: 10,
 					}));
 			},

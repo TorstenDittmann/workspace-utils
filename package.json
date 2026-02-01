@@ -13,8 +13,16 @@
 		"pnpm",
 		"workspaces"
 	],
+	"homepage": "https://torstendittmann.github.io/workspace-utils/",
+	"bugs": {
+		"url": "https://github.com/TorstenDittmann/workspace-utils/issues"
+	},
 	"license": "MIT",
 	"author": "Torsten Dittmann",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/TorstenDittmann/workspace-utils.git"
+	},
 	"bin": {
 		"workspace-utils": "./dist/index.js",
 		"wsu": "./dist/index.js"
@@ -23,14 +31,13 @@
 		"dist/"
 	],
 	"type": "module",
-	"module": "index.ts",
 	"scripts": {
 		"build": "bun run build.ts",
 		"dev": "bun run index.ts",
 		"prepublishOnly": "bun run build",
 		"format": "oxfmt",
 		"format:check": "oxfmt --check",
-		"lint": "oxlint",
+		"lint": "publint --strict && oxlint",
 		"lint:fix": "oxlint --fix",
 		"test": "bun test",
 		"test:watch": "bun test --watch",
@@ -48,7 +55,8 @@
 		"@types/bun": "^1.3.8",
 		"@types/node": "^25.1.0",
 		"oxfmt": "^0.27.0",
-		"oxlint": "^1.42.0"
+		"oxlint": "^1.42.0",
+		"publint": "^0.3.17"
 	},
 	"peerDependencies": {
 		"typescript": "^5.9.3"

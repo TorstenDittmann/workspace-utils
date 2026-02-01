@@ -71,9 +71,7 @@ describe("buildCommand", () => {
 			async (batches) => {
 				for (const batch of batches) {
 					receivedBatches.push(
-						batch
-							.filter((cmd) => Boolean(cmd))
-							.map((cmd) => cmd.logOptions.prefix),
+						batch.filter((cmd) => Boolean(cmd)).map((cmd) => cmd.logOptions.prefix),
 					);
 				}
 
@@ -84,7 +82,7 @@ describe("buildCommand", () => {
 						success: true,
 						exitCode: 0,
 						packageName: cmd.logOptions.prefix,
-						command: [cmd.command, ...(cmd.args)].join(" "),
+						command: [cmd.command, ...cmd.args].join(" "),
 						duration: 10,
 					}));
 			},

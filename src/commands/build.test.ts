@@ -69,13 +69,13 @@ describe("buildCommand", () => {
 		const receivedBatches: string[][] = [];
 		const runBatchesSpy = spyOn(ProcessRunner, "runBatches").mockImplementation(
 			async (batches) => {
-				batches.forEach((batch) => {
+				for (const batch of batches) {
 					receivedBatches.push(
 						batch
 							.filter((cmd) => Boolean(cmd))
 							.map((cmd) => cmd?.logOptions.prefix ?? ""),
 					);
-				});
+				}
 
 				return batches
 					.flat()

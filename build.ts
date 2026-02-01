@@ -5,4 +5,3 @@ await Bun.build({
 	target: "node",
 });
 
-console.log("Build succeeded");

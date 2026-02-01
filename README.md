@@ -11,6 +11,7 @@ A **universal CLI tool** for orchestrating scripts across **monorepo workspaces*
 - ⚡ **Configurable concurrency** limits
 - 🏗️ **Smart build ordering** respecting package dependencies
 - 📺 **Real-time log streaming** with timestamps
+- 💾 **Smart build caching** - skip unchanged packages automatically
 - 🎯 **Zero configuration** - works with any workspace setup
 - 🌐 **Universal support** - works with Bun, pnpm, and npm workspaces
 
@@ -126,7 +127,7 @@ wsu build [options]
 
 - `-f, --filter <pattern>` - Filter packages by pattern
 - `-c, --concurrency <number>` - Max concurrent builds per batch (default: 4)
-- `--skip-unchanged` - Skip unchanged packages (future feature)
+- `--no-skip-unchanged` - Build all packages (disable caching)
 
 **Examples:**
 
@@ -189,6 +190,29 @@ Example `package.json` scripts:
 		"dev:limited": "wsu dev --concurrency 2"
 	}
 }
+```
+
+### `cache`
+
+Manage the build cache. View status or clear cached builds.
+
+```bash
+wsu cache [command]
+```
+
+**Commands:**
+
+- `status` - Show cache status (default)
+- `clear` - Clear all cached builds
+
+**Examples:**
+
+```bash
+# View cache status
+wsu cache
+
+# Clear all cached builds
+wsu cache clear
 ```
 
 ## 🔍 Package Filtering
@@ -335,13 +359,11 @@ npx wsu run nonexistent-script
 
 ## 🛣️ Roadmap
 
-- [ ] **Caching** - Skip builds for unchanged packages
 - [ ] **Watch mode** - Restart processes on file changes
 - [ ] **Interactive mode** - Focus on specific package logs
 - [ ] **Custom log formatters** - Configurable output styles
 - [ ] **Dry run mode** - Preview execution plan
 - [ ] **Yarn workspaces support** - Add support for Yarn workspaces
-- [ ] **Lerna integration** - Better compatibility with Lerna projects
 
 ## 🤝 Contributing
 

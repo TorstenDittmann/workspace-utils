@@ -44,9 +44,20 @@ workspace-utils run <script> [options]
 workspace-utils build [options]
 ```
 
-| Option             | Description                      | Default |
-| ------------------ | -------------------------------- | ------- |
-| `--skip-unchanged` | Skip unchanged packages (future) | `false` |
+| Option                | Description                         | Default           |
+| --------------------- | ----------------------------------- | ----------------- |
+| `--no-skip-unchanged` | Disable caching, build all packages | (caching enabled) |
+
+#### cache command
+
+```bash
+workspace-utils cache [command]
+```
+
+| Command  | Description                               | Default |
+| -------- | ----------------------------------------- | ------- |
+| `status` | Show cache statistics and cached packages | ✓       |
+| `clear`  | Clear all cached build data               |         |
 
 #### dev command
 
@@ -132,9 +143,11 @@ Add workspace-utils commands to your root `package.json`:
 		"test:sequential": "workspace-utils run test --sequential",
 		"build": "workspace-utils build",
 		"build:apps": "workspace-utils build --filter 'apps/*'",
+		"build:all": "workspace-utils build --no-skip-unchanged",
 		"dev": "workspace-utils dev",
 		"lint": "workspace-utils run lint --concurrency 8",
-		"typecheck": "workspace-utils run typecheck --parallel"
+		"typecheck": "workspace-utils run typecheck --parallel",
+		"cache:clear": "workspace-utils cache clear"
 	}
 }
 ```
@@ -193,6 +206,55 @@ workspace-utils run test --concurrency 8
 
 # For CI with limited resources
 workspace-utils run lint --concurrency 2
+```
+
+## Build Caching
+
+The `build` command includes intelligent caching to skip unchanged packages:
+
+### How Caching Works
+
+- **Content hashing** - SHA256 hashes of source files and `package.json`
+- **Git-aware** - Only tracks files not ignored by `.gitignore`
+- **Dependency tracking** - Cache invalidated when dependencies change
+- **Automatic management** - Cache stored in `.wsu/` (auto-added to `.gitignore`)
+
+### Cache Configuration
+
+Caching is enabled by default. Control it with:
+
+```bash
+# Build with caching (default) - skips unchanged packages
+workspace-utils build
+
+# Build all packages (disable caching)
+workspace-utils build --no-skip-unchanged
+```
+
+### Cache Management Commands
+
+```bash
+# View cache status and statistics
+workspace-utils cache
+
+# Clear all cached builds
+workspace-utils cache clear
+```
+
+### When to Disable Caching
+
+- **Clean builds** - When you want to ensure everything rebuilds
+- **CI/CD** - Some pipelines prefer full builds for consistency
+- **Debugging** - When investigating build issues
+
+### CI/CD Caching Strategy
+
+```bash
+# For CI with caching (faster incremental builds)
+workspace-utils build
+
+# For release builds (full rebuild)
+workspace-utils build --no-skip-unchanged
 ```
 
 ## Filtering Patterns

@@ -1,4 +1,6 @@
-export default {
+import { defineConfig } from "docia";
+
+export default defineConfig({
 	srcDir: "src",
 	outDir: "book",
 	basePath: "/workspace-utils/",
@@ -14,4 +16,4 @@ export default {
 		githubEditBranch: "main",
 		githubEditPath: "docs/src",
 	},
-};
+});

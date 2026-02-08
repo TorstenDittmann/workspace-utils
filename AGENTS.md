@@ -5,7 +5,7 @@
 - Root CLI entry point lives in `index.ts`; compiled output is emitted to `dist/` via Bun build.
 - Source is under `src/` with `commands/` (dev/run/build implementations), `core/` (workspace parsing, dependency graph, process runner), `package-managers/` (npm/pnpm/Bun detection + adapters), and `utils/` (logging, package helpers).
 - Tests live alongside code as `*.test.ts` in `src/` plus workspace fixtures under `tests/` (npm/pnpm/Bun sample workspaces). Avoid editing fixture lockfiles unless the behavior changes.
-- Docs are in `docs/` (mdBook). Publishing copies `package.json` into `dist/` for npm distribution.
+- Docs are in `docs/` (docia). Publishing copies `package.json` into `dist/` for npm distribution.
 
 ## Build, Test, and Development Commands
 
@@ -13,7 +13,7 @@
 - `bun run build` — bundle `index.ts` to `dist/index.js` and copy `package.json` (used for releases).
 - `bun test` / `bun test --watch` — execute unit tests; relies on Bun’s test runner.
 - `bun run format` / `bun run format:check` — apply or verify Prettier formatting.
-- `cd docs && mdbook build|serve` — build or locally serve docs (requires `mdbook` installed).
+- `cd docs && bunx --bun docia build|dev` — build or locally serve docs (requires Bun).
 
 ## Coding Style & Naming Conventions
 

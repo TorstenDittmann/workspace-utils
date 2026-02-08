@@ -8,9 +8,8 @@
 - [Quick Start](./quick-start.md)
 - [Configuration](./configuration.md)
 
-# Commands
-
-- [Commands](./commands/overview.md)
+- Commands
+    - [Overview](./commands/overview.md)
     - [run](./commands/run.md)
     - [build](./commands/build.md)
     - [dev](./commands/dev.md)

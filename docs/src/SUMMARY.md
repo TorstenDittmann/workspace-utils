@@ -1,6 +1,6 @@
 # Summary
 
-[Introduction](./introduction.md)
+- [Introduction](./README.md)
 
 # Getting Started
 
@@ -10,12 +10,12 @@
 
 # Commands
 
-- [Overview](./commands/overview.md)
-- [run](./commands/run.md)
-- [build](./commands/build.md)
-- [dev](./commands/dev.md)
-- [cache](./commands/cache.md)
-- [clean](./commands/clean.md)
+- [Commands](./commands/overview.md)
+  - [run](./commands/run.md)
+  - [build](./commands/build.md)
+  - [dev](./commands/dev.md)
+  - [cache](./commands/cache.md)
+  - [clean](./commands/clean.md)
 
 # Usage Examples
 

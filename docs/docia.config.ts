@@ -1,7 +1,7 @@
 export default {
 	srcDir: "src",
 	outDir: "book",
-	basePath: "/",
+	basePath: "/workspace-utils/",
 	site: {
 		title: "workspace-utils",
 		description:

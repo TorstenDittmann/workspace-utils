@@ -13,7 +13,7 @@
       "devDependencies": {
         "@types/bun": "^1.3.8",
         "@types/node": "^25.1.0",
-        "docia": "^0.0.5",
+        "docia": "^0.0.6",
         "oxfmt": "^0.27.0",
         "oxlint": "^1.42.0",
         "publint": "^0.3.17",
@@ -108,7 +108,7 @@
 
     "devlop": ["devlop@1.1.0", "", { "dependencies": { "dequal": "^2.0.0" } }, "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA=="],
 
-    "docia": ["docia@0.0.5", "", { "dependencies": { "picocolors": "^1.1.1", "react": "^19.2.4", "react-dom": "^19.2.4", "shiki": "^3.22.0" }, "peerDependencies": { "typescript": "^5" }, "bin": { "docia": "src/cli.ts" } }, "sha512-ApAhp7Gsxm9Znp6al34ylJyGC1OQxVV4YFC3i8v3fwAqxwew6KrVq1iBC5kGhHlx6PJ45jVyR2RHkb1nPEm5Zg=="],
+    "docia": ["docia@0.0.6", "", { "dependencies": { "picocolors": "^1.1.1", "react": "^19.2.4", "react-dom": "^19.2.4", "shiki": "^3.22.0" }, "peerDependencies": { "typescript": "^5" }, "bin": { "docia": "src/cli.ts" } }, "sha512-xa966Y9rgL10zGWrp1DARkfDhvzryKLCYyFFKRZLkfG6wY6ciHwsp225ZZvCEUMz3fNxkP9CNA8KGJCkKqNE6w=="],
 
     "fast-glob": ["fast-glob@3.3.3", "", { "dependencies": { "@nodelib/fs.stat": "^2.0.2", "@nodelib/fs.walk": "^1.2.3", "glob-parent": "^5.1.2", "merge2": "^1.3.0", "micromatch": "^4.0.8" } }, "sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg=="],
 

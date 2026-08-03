@@ -5,6 +5,7 @@ import { PackageManagerDetector } from "./detector.ts";
 import { BunPackageManager } from "./bun.ts";
 import { PnpmPackageManager } from "./pnpm.ts";
 import { NpmPackageManager } from "./npm.ts";
+import { YarnPackageManager } from "./yarn.ts";
 
 describe("PackageManagerDetector", () => {
 	const testDir = join(process.cwd(), "test-temp");
@@ -135,7 +136,7 @@ describe("PackageManagerDetector", () => {
 
 		it("should throw error when no package manager is detected", () => {
 			expect(() => PackageManagerDetector.detect(testDir)).toThrow(
-				"No package manager detected. Please ensure you have a lock file (bun.lockb, pnpm-lock.yaml, or package-lock.json) or workspace configuration in your project.",
+				"No package manager detected. Expected Bun, pnpm, npm, or a Yarn Berry project with an identifying lock/configuration file.",
 			);
 		});
 
@@ -184,10 +185,11 @@ describe("PackageManagerDetector", () => {
 		it("should return all supported package managers", () => {
 			const managers = PackageManagerDetector.getSupportedPackageManagers();
 
-			expect(managers).toHaveLength(3);
+			expect(managers).toHaveLength(4);
 			expect(managers[0]).toBeInstanceOf(BunPackageManager);
 			expect(managers[1]).toBeInstanceOf(PnpmPackageManager);
-			expect(managers[2]).toBeInstanceOf(NpmPackageManager);
+			expect(managers[2]).toBeInstanceOf(YarnPackageManager);
+			expect(managers[3]).toBeInstanceOf(NpmPackageManager);
 		});
 	});
 

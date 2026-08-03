@@ -1,16 +1,22 @@
 import { spawn, type ChildProcess } from "child_process";
 import pc from "picocolors";
+import { emitEvent, isJsonReporter } from "./reporter.ts";
 
 export interface ProcessOptions {
 	cwd: string;
 	env?: Record<string, string>;
 	stdio?: "inherit" | "pipe";
+	retries?: number;
+	timeoutMs?: number;
+	attempt?: number;
 }
 
 export interface LogOptions {
 	prefix: string;
 	color: string;
 	showTimestamp?: boolean;
+	taskName?: string;
+	attempt?: number;
 }
 
 export interface ProcessResult {
@@ -19,6 +25,8 @@ export interface ProcessResult {
 	packageName: string;
 	command: string;
 	duration: number;
+	signal?: NodeJS.Signals;
+	timedOut?: boolean;
 }
 
 export class ProcessRunner {
@@ -103,11 +111,43 @@ export class ProcessRunner {
 		options: ProcessOptions,
 		logOptions: LogOptions,
 	): Promise<ProcessResult> {
+		if ((options.retries || 0) > 0) {
+			let result: ProcessResult | undefined;
+			for (let attempt = 0; attempt <= (options.retries || 0); attempt++) {
+				result = await this.runCommand(
+					command,
+					args,
+					{ ...options, retries: 0, attempt: attempt + 1 },
+					{ ...logOptions, attempt: attempt + 1 },
+				);
+				if (result.success) return result;
+				if (result.signal && !result.timedOut) return result;
+				if (attempt < (options.retries || 0)) {
+					if (isJsonReporter())
+						emitEvent("task_retry", {
+							packageName: logOptions.prefix,
+							taskName: args[1] || args[0],
+							attempt: attempt + 2,
+						});
+					else console.log(`[${logOptions.prefix}] Retrying (attempt ${attempt + 2})`);
+				}
+			}
+			return result!;
+		}
 		const startTime = Date.now();
 		const fullCommand = [command, ...args].join(" ");
+		const attempt = options.attempt || 1;
+		const taskName = args[1] || args[0] || command;
 
 		const colorFn = this.getColorFn(logOptions.color);
-		console.log(`[${colorFn(logOptions.prefix)}] ` + pc.gray(`Starting: ${fullCommand}`));
+		if (isJsonReporter())
+			emitEvent("task_start", {
+				packageName: logOptions.prefix,
+				taskName,
+				command: fullCommand,
+				attempt,
+			});
+		else console.log(`[${colorFn(logOptions.prefix)}] ` + pc.gray(`Starting: ${fullCommand}`));
 
 		return new Promise((resolve) => {
 			const childProcess = spawn(command, args, {
@@ -118,6 +158,15 @@ export class ProcessRunner {
 
 			// Register child for potential global shutdown
 			ProcessRunner.activeChildren.add(childProcess);
+			let timedOut = false;
+			let forceTimeout: ReturnType<typeof setTimeout> | undefined;
+			const timeout = options.timeoutMs
+				? setTimeout(() => {
+						timedOut = true;
+						childProcess.kill("SIGTERM");
+						forceTimeout = setTimeout(() => childProcess.kill("SIGKILL"), 1000);
+					}, options.timeoutMs)
+				: undefined;
 
 			// Stream stdout with prefix and color
 			if (childProcess.stdout) {
@@ -143,11 +192,13 @@ export class ProcessRunner {
 				});
 			}
 
-			childProcess.on("close", (exitCode) => {
+			childProcess.on("close", (exitCode, signal) => {
+				if (timeout) clearTimeout(timeout);
+				if (forceTimeout) clearTimeout(forceTimeout);
 				// Deregister on close
 				ProcessRunner.activeChildren.delete(childProcess);
 				const duration = Date.now() - startTime;
-				const code = exitCode || 0;
+				const code = exitCode ?? (signal ? 1 : 0);
 
 				const result: ProcessResult = {
 					success: code === 0,
@@ -155,10 +206,24 @@ export class ProcessRunner {
 					packageName: logOptions.prefix,
 					command: fullCommand,
 					duration,
+					signal: signal || undefined,
+					timedOut,
 				};
 
 				const colorFn = this.getColorFn(logOptions.color);
-				if (code === 0) {
+				if (isJsonReporter())
+					emitEvent("task_complete", {
+						packageName: logOptions.prefix,
+						taskName,
+						command: fullCommand,
+						attempt,
+						exitCode: code,
+						success: code === 0,
+						duration,
+						signal,
+						timedOut,
+					});
+				else if (code === 0) {
 					console.log(
 						`[${colorFn(logOptions.prefix)}] ` +
 							pc.green(`✅ Completed in ${duration}ms`),
@@ -174,6 +239,8 @@ export class ProcessRunner {
 			});
 
 			childProcess.on("error", (error) => {
+				if (timeout) clearTimeout(timeout);
+				if (forceTimeout) clearTimeout(forceTimeout);
 				// Deregister on error
 				ProcessRunner.activeChildren.delete(childProcess);
 				const duration = Date.now() - startTime;
@@ -246,6 +313,15 @@ export class ProcessRunner {
 	 * Log a single line with prefix and color
 	 */
 	private static logLine(line: string, logOptions: LogOptions, isError = false): void {
+		if (isJsonReporter()) {
+			emitEvent(isError ? "task_stderr" : "task_stdout", {
+				packageName: logOptions.prefix,
+				taskName: logOptions.taskName,
+				attempt: logOptions.attempt || 1,
+				message: line,
+			});
+			return;
+		}
 		const timestamp = logOptions.showTimestamp ? pc.dim(`[${new Date().toISOString()}] `) : "";
 
 		// Only color the package name in brackets, not the entire line
@@ -269,6 +345,7 @@ export class ProcessRunner {
 			logOptions: LogOptions;
 		}>,
 		concurrency = 4,
+		failFast = false,
 	): Promise<ProcessResult[]> {
 		const results: ProcessResult[] = [];
 		const executing: Promise<ProcessResult>[] = [];
@@ -290,6 +367,11 @@ export class ProcessRunner {
 				if (completedPromise) {
 					const completed = await completedPromise;
 					results.push(completed);
+					if (failFast && !completed.success) {
+						executing.splice(completedIndex, 1);
+						await this.terminateAll();
+						break;
+					}
 				}
 
 				// Remove completed promise from executing array
@@ -325,6 +407,7 @@ export class ProcessRunner {
 			options: ProcessOptions;
 			logOptions: LogOptions;
 		}>,
+		continueOnError = false,
 	): Promise<ProcessResult[]> {
 		const results: ProcessResult[] = [];
 
@@ -339,7 +422,7 @@ export class ProcessRunner {
 			results.push(result);
 
 			// Stop on first failure unless explicitly configured to continue
-			if (!result.success) {
+			if (!result.success && !continueOnError) {
 				console.log(
 					pc.red(`\n❌ Stopping execution due to failure in ${result.packageName}`),
 				);

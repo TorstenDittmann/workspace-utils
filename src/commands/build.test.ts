@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
-import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { buildCommand } from "./build.ts";
 import { ProcessRunner } from "../core/process-runner.ts";
@@ -66,25 +66,17 @@ describe("buildCommand", () => {
 	});
 
 	it("includes dependencies when a filter is provided", async () => {
-		const receivedBatches: string[][] = [];
-		const runBatchesSpy = spyOn(ProcessRunner, "runBatches").mockImplementation(
-			async (batches) => {
-				for (const batch of batches) {
-					receivedBatches.push(
-						batch.filter((cmd) => Boolean(cmd)).map((cmd) => cmd.logOptions.prefix),
-					);
-				}
-
-				return batches
-					.flat()
-					.filter((cmd) => Boolean(cmd))
-					.map((cmd) => ({
-						success: true,
-						exitCode: 0,
-						packageName: cmd.logOptions.prefix,
-						command: [cmd.command, ...cmd.args].join(" "),
-						duration: 10,
-					}));
+		const receivedPackages: string[] = [];
+		const runCommandSpy = spyOn(ProcessRunner, "runCommand").mockImplementation(
+			async (command, args, _options, logOptions) => {
+				receivedPackages.push(logOptions.prefix);
+				return {
+					success: true,
+					exitCode: 0,
+					packageName: logOptions.prefix,
+					command: [command, ...args].join(" "),
+					duration: 10,
+				};
 			},
 		);
 
@@ -94,11 +86,31 @@ describe("buildCommand", () => {
 
 		try {
 			await buildCommand({ filter: "*app*" });
-			expect(receivedBatches).toEqual([["@test/lib"], ["@test/app"]]);
-			expect(runBatchesSpy).toHaveBeenCalled();
+			expect(receivedPackages).toEqual(["@test/lib", "@test/app"]);
+			expect(runCommandSpy).toHaveBeenCalled();
 		} finally {
-			runBatchesSpy.mockRestore();
+			runCommandSpy.mockRestore();
 			processExitSpy.mockRestore();
 		}
+	});
+
+	it("restores deleted artifacts without rerunning the build", async () => {
+		const libPath = join(testDir, "packages", "lib");
+		writeFileSync(
+			join(libPath, "package.json"),
+			JSON.stringify({
+				name: "@test/lib",
+				version: "1.0.0",
+				files: ["dist"],
+				scripts: {
+					build: "mkdir -p dist && echo run >> build-count && echo artifact > dist/index.js",
+				},
+			}),
+		);
+		await buildCommand({ filter: "@test/lib" });
+		rmSync(join(libPath, "dist"), { recursive: true, force: true });
+		await buildCommand({ filter: "@test/lib" });
+		expect(readFileSync(join(libPath, "build-count"), "utf8").trim()).toBe("run");
+		expect(readFileSync(join(libPath, "dist", "index.js"), "utf8").trim()).toBe("artifact");
 	});
 });

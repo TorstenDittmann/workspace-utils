@@ -25,6 +25,9 @@ jobs:
             - name: Build
               run: bun run build
 
+            - name: Build documentation
+              run: bun run docs:build
+
             - name: Check formatting
               run: bun run format:check
 

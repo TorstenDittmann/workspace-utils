@@ -5,13 +5,19 @@ import {
 	validatePackagesHaveScript,
 	prepareCommandExecution,
 } from "../utils/package-utils.ts";
-import { ProcessRunner } from "../core/process-runner.ts";
 import { BuildCache } from "../core/cache.ts";
 import { Output } from "../utils/output.ts";
 import type { PackageInfo } from "../core/workspace.ts";
+import {
+	resolveTargets,
+	parsePositiveInteger,
+	parseDuration,
+	type CommonCommandOptions,
+} from "../utils/command-options.ts";
+import { runTopological } from "../core/scheduler.ts";
+import { emitEvent, isJsonReporter } from "../core/reporter.ts";
 
-interface BuildCommandOptions {
-	filter?: string;
+interface BuildCommandOptions extends CommonCommandOptions {
 	concurrency?: string;
 	skipUnchanged?: boolean;
 }
@@ -29,7 +35,12 @@ function collectPackagesWithDependencies(
 
 		collected.set(pkg.name, pkg);
 
-		const dependencies = [...pkg.dependencies, ...pkg.devDependencies];
+		const dependencies = [
+			...pkg.dependencies,
+			...pkg.devDependencies,
+			...(pkg.optionalDependencies || []),
+			...(pkg.peerDependencies || []),
+		];
 		for (const depName of dependencies) {
 			const depPackage = packageMap.get(depName);
 			if (depPackage && !collected.has(depName)) {
@@ -48,6 +59,12 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		// Parse workspace
 		const parser = new WorkspaceParser();
 		const workspace = await parser.parseWorkspace();
+		if (isJsonReporter())
+			emitEvent("workspace", {
+				root: workspace.root,
+				packageManager: workspace.packageManager.name,
+				packageCount: workspace.packages.length,
+			});
 
 		Output.dim(`Workspace root: ${workspace.root}`, "folder");
 		Output.dim(`Found ${workspace.packages.length} packages\n`, "package");
@@ -59,19 +76,16 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 
 		if (options.skipUnchanged !== false) {
 			cache = new BuildCache(workspace.root);
-			await cache.initialize();
+			await cache.initialize(Boolean(options.dryRun));
 			Output.log("Build cache enabled - checking for unchanged packages...", "chart", "blue");
 		}
 
 		// Filter packages if pattern provided
-		let targetPackages = workspace.packages;
-		if (options.filter) {
-			targetPackages = parser.filterPackages(workspace.packages, options.filter);
-			Output.log(
-				`Filtered to ${targetPackages.length} packages matching "${options.filter}"`,
-				"magnifying",
-				"yellow",
-			);
+		let targetPackages = resolveTargets(workspace, options);
+		if (isJsonReporter())
+			emitEvent("selection", { packages: targetPackages.map((pkg) => pkg.name) });
+		if (options.filter?.length || options.affected || options.since) {
+			Output.log(`Selected ${targetPackages.length} packages`, "magnifying", "yellow");
 		}
 
 		// Validate filtered packages have the build script
@@ -108,11 +122,52 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		// Check cache for each package (if enabled)
 		if (cache && options.skipUnchanged !== false) {
 			for (const pkg of packagesWithBuild) {
-				const isCached = await cache.isValid(pkg);
-				if (isCached) {
+				const decision = await cache.getDecision(pkg);
+				if (isJsonReporter())
+					emitEvent(decision.status === "hit" ? "cache_hit" : "cache_miss", {
+						packageName: pkg.name,
+						status: decision.status,
+					});
+				if (decision.status === "non-cacheable")
+					Output.warning(
+						`${pkg.name} has no inferable package artifacts and will not be cached`,
+					);
+				else if (decision.status === "corrupt")
+					Output.warning(`${pkg.name} has a corrupt artifact entry and will be rebuilt`);
+				const restored =
+					decision.status === "hit" && !options.dryRun
+						? await cache.restore(pkg, decision)
+						: decision.status === "hit";
+				if (restored && isJsonReporter())
+					emitEvent("artifact_restore", {
+						packageName: pkg.name,
+						inputHash: decision.inputHash,
+						dryRun: Boolean(options.dryRun),
+					});
+				if (restored) {
 					skippedPackages.push(pkg);
 				} else {
 					packagesToBuild.push(pkg);
+				}
+			}
+			// A rebuilt dependency always forces its cached dependents to rebuild.
+			const changed = new Set(packagesToBuild.map((pkg) => pkg.name));
+			let expanded = true;
+			while (expanded) {
+				expanded = false;
+				for (const pkg of Array.from(skippedPackages)) {
+					const deps = [
+						...pkg.dependencies,
+						...pkg.devDependencies,
+						...(pkg.optionalDependencies || []),
+						...(pkg.peerDependencies || []),
+					];
+					if (deps.some((dep) => changed.has(dep))) {
+						skippedPackages.splice(skippedPackages.indexOf(pkg), 1);
+						packagesToBuild.push(pkg);
+						changed.add(pkg.name);
+						expanded = true;
+					}
 				}
 			}
 
@@ -128,6 +183,13 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 			}
 
 			if (packagesToBuild.length === 0) {
+				if (options.dryRun && isJsonReporter())
+					emitEvent("plan", {
+						dryRun: true,
+						batches: [],
+						restores: skippedPackages.map((pkg) => pkg.name),
+						concurrency: parsePositiveInteger(options.concurrency, "concurrency", 4),
+					});
 				Output.celebrate("All packages are up to date!");
 				return;
 			}
@@ -171,7 +233,9 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		});
 		console.log();
 
-		const concurrency = parseInt(options.concurrency || "4", 10);
+		const concurrency = parsePositiveInteger(options.concurrency, "concurrency", 4);
+		const retries = parsePositiveInteger(options.retry, "retry", 0, true);
+		const timeoutMs = parseDuration(options.timeout);
 
 		Output.log(`Package manager: ${workspace.packageManager.name}`, "wrench", "blue");
 		Output.log(`Batch concurrency: ${concurrency}`, "lightning", "blue");
@@ -191,29 +255,43 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 					);
 					return commands[0];
 				})
-				.filter((cmd): cmd is NonNullable<typeof cmd> => cmd !== undefined);
+				.filter((cmd): cmd is NonNullable<typeof cmd> => cmd !== undefined)
+				.map((cmd) => ({ ...cmd, options: { ...cmd.options, retries, timeoutMs } }));
 		});
+		if (options.dryRun) {
+			Output.info("Dry run build plan:");
+			if (isJsonReporter())
+				emitEvent("plan", { dryRun: true, batches: buildBatches, concurrency });
+			commandBatches
+				.flat()
+				.forEach((c) =>
+					Output.listItem(`${c.logOptions.prefix}: ${c.command} ${c.args.join(" ")}`),
+				);
+			return;
+		}
 
 		// Execute builds in batches
 		const startTime = Date.now();
-		const allResults = await ProcessRunner.runBatches(commandBatches, concurrency);
+		const scheduled = await runTopological(
+			commandBatches.flat(),
+			filteredGraph,
+			concurrency,
+			options,
+		);
+		const allResults = scheduled.results;
+		scheduled.cancelled.forEach((name) => Output.warning(`Cancelled after failure: ${name}`));
 		const totalDuration = Date.now() - startTime;
 
 		// Update cache for successful builds
 		if (cache && options.skipUnchanged !== false) {
 			const successfulBuilds = allResults.filter((r) => r.success);
-			const allPackagesMap = new Map(workspace.packages.map((pkg) => [pkg.name, pkg]));
-
 			for (const result of successfulBuilds) {
 				const pkg = packageMap.get(result.packageName);
 				if (pkg) {
-					await cache.update(pkg, allPackagesMap, result.duration);
+					const stored = await cache.storeArtifacts(pkg, result.duration);
+					if (stored && isJsonReporter())
+						emitEvent("artifact_store", { packageName: pkg.name });
 				}
-			}
-
-			// Invalidate dependents of rebuilt packages (conservative approach)
-			for (const result of successfulBuilds) {
-				cache.invalidateDependents(result.packageName, workspace.packages);
 			}
 
 			Output.log(`Updated cache for ${successfulBuilds.length} packages`, "chart", "blue");
@@ -225,12 +303,19 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		const totalPackages = successful.length + skippedPackages.length;
 
 		Output.buildSummary(totalPackages, failed.length, totalDuration);
+		if (isJsonReporter())
+			emitEvent("summary", {
+				successful: totalPackages,
+				failed: failed.length,
+				blocked: scheduled.blocked.length,
+				duration: totalDuration,
+			});
 
 		if (skippedPackages.length > 0) {
 			Output.dim(`Skipped (cached): ${skippedPackages.length} packages`, "checkmark");
 		}
 
-		if (failed.length > 0) {
+		if (failed.length > 0 || scheduled.blocked.length > 0) {
 			console.log(pc.red("\nFailed packages:"));
 			failed.forEach((f) => {
 				Output.listItem(`${f.packageName} (exit code ${f.exitCode})`);
@@ -260,7 +345,7 @@ export async function buildCommand(options: BuildCommandOptions): Promise<void> 
 		}
 
 		// Exit with error code if any builds failed
-		if (failed.length > 0) {
+		if (failed.length > 0 || scheduled.blocked.length > 0) {
 			Output.log("\nBuild failed due to package failures.", "fire", "red");
 			process.exit(1);
 		} else {

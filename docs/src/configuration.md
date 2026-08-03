@@ -20,11 +20,11 @@ All configuration is done through command-line options. Here are the most common
 
 Available for all commands:
 
-| Option                   | Description                     | Default      | Example               |
-| ------------------------ | ------------------------------- | ------------ | --------------------- |
-| `--filter <pattern>`     | Filter packages by glob pattern | All packages | `--filter "@scope/*"` |
-| `--concurrency <number>` | Max concurrent processes        | `4`          | `--concurrency 8`     |
-| `--help`                 | Show command help               | -            | `--help`              |
+| Option                   | Description                                    | Default      | Example             |
+| ------------------------ | ---------------------------------------------- | ------------ | ------------------- |
+| `--filter <pattern>`     | Repeatable relationship-aware package selector | All packages | `--filter "app..."` |
+| `--concurrency <number>` | Max concurrent processes                       | `4`          | `--concurrency 8`   |
+| `--help`                 | Show command help                              | -            | `--help`            |
 
 ### Command-Specific Options
 
@@ -210,7 +210,7 @@ workspace-utils run lint --concurrency 2
 
 ## Build Caching
 
-The `build` command includes intelligent caching to skip unchanged packages:
+The `build` command includes intelligent caching and restores declared build artifacts. Output paths are inferred from `files`, `main`, `module`, `types`, `typings`, `bin`, and `exports` in each package's `package.json`. No conventional output directory is guessed; packages without inferable outputs build normally without artifact caching.
 
 ### How Caching Works
 

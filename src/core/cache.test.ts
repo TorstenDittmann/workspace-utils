@@ -342,6 +342,31 @@ describe("BuildCache", () => {
 			expect(stats.newestBuild).toBeDefined();
 		});
 	});
+
+	describe("artifacts", () => {
+		it("stores and restores inferred build outputs", async () => {
+			const pkg: PackageInfo = {
+				name: "artifact-pkg",
+				path: join(testDir, "artifact-pkg"),
+				packageJson: { name: "artifact-pkg", files: ["dist"], scripts: { build: "build" } },
+				scripts: { build: "build" },
+				dependencies: [],
+				devDependencies: [],
+			};
+			mkdirSync(join(pkg.path, "src"), { recursive: true });
+			mkdirSync(join(pkg.path, "dist"), { recursive: true });
+			writeFileSync(join(pkg.path, "package.json"), JSON.stringify(pkg.packageJson));
+			writeFileSync(join(pkg.path, "src", "index.ts"), "source");
+			writeFileSync(join(pkg.path, "dist", "index.js"), "artifact");
+
+			expect(await cache.storeArtifacts(pkg, 10)).toBe(true);
+			rmSync(join(pkg.path, "dist"), { recursive: true, force: true });
+			const decision = await cache.getDecision(pkg);
+			expect(decision.status).toBe("hit");
+			expect(await cache.restore(pkg, decision)).toBe(true);
+			expect(readFileSync(join(pkg.path, "dist", "index.js"), "utf8")).toBe("artifact");
+		});
+	});
 });
 
 import { readFileSync } from "fs";

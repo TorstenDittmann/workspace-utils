@@ -7,22 +7,28 @@ import {
 	appendFileSync,
 	statSync,
 	rmSync,
+	cpSync,
+	renameSync,
+	lstatSync,
+	chmodSync,
 } from "fs";
-import { join, relative } from "path";
+import { join, relative, resolve, dirname, isAbsolute, normalize } from "path";
 import { promisify } from "util";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import fg from "fast-glob";
 import type { PackageInfo } from "./workspace.ts";
 import { Output } from "../utils/output.ts";
+import { PackageManagerDetector } from "../package-managers/detector.ts";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
-const CACHE_VERSION = 2; // Bumped for new structure
+const CACHE_VERSION = 3;
 const CACHE_DIR_NAME = ".wsu";
 const PACKAGES_DIR = "packages";
 const CACHE_FILE = "cache.json";
 const FILES_FILE = "files.json";
 const MANIFEST_FILE = "manifest.json";
+const ARTIFACTS_DIR = "artifacts";
 
 // Per-package file metadata
 interface FileMetadata {
@@ -42,6 +48,38 @@ export interface CacheEntry {
 	lastBuild: string;
 	buildDuration: number;
 	builtBy: string;
+	artifactHash?: string;
+	artifactFiles?: ArtifactFile[];
+}
+
+export interface ArtifactDeclaration {
+	pattern: string;
+	kind: "file" | "glob";
+	exclude?: boolean;
+}
+export interface ArtifactFile {
+	path: string;
+	hash: string;
+	mode: number;
+}
+export interface ArtifactManifest {
+	version: number;
+	packageName: string;
+	taskName: string;
+	inputHash: string;
+	artifactHash: string;
+	files: ArtifactFile[];
+	createdAt: string;
+	buildDuration: number;
+}
+export interface ArtifactCacheEntry extends CacheEntry {
+	artifactHash: string;
+	artifactFiles: ArtifactFile[];
+}
+export interface CacheDecision {
+	status: "hit" | "miss" | "non-cacheable" | "corrupt";
+	inputHash: string;
+	declarations: ArtifactDeclaration[];
 }
 
 // Manifest tracks all cached packages (for quick lookups)
@@ -74,17 +112,17 @@ export class BuildCache {
 	/**
 	 * Initialize cache - create directory structure and ensure .gitignore
 	 */
-	async initialize(): Promise<void> {
+	async initialize(readOnly = false): Promise<void> {
 		if (this.initialized) return;
 
 		// Create .wsu directory
-		if (!existsSync(this.baseCacheDir)) {
+		if (!readOnly && !existsSync(this.baseCacheDir)) {
 			mkdirSync(this.baseCacheDir, { recursive: true });
 			Output.dim(`Created ${CACHE_DIR_NAME}/ directory`, "folder");
 		}
 
 		// Ensure .wsu is in .gitignore
-		await this.ensureGitignore();
+		if (!readOnly) await this.ensureGitignore();
 
 		// Load manifest
 		this.loadManifest();
@@ -97,6 +135,180 @@ export class BuildCache {
 	 */
 	private getPackageCacheDir(packageName: string): string {
 		return join(this.baseCacheDir, PACKAGES_DIR, packageName);
+	}
+
+	private safePackageKey(packageName: string): string {
+		return Buffer.from(packageName).toString("base64url");
+	}
+
+	private getArtifactDir(packageName: string, inputHash: string): string {
+		return join(this.baseCacheDir, ARTIFACTS_DIR, this.safePackageKey(packageName), inputHash);
+	}
+
+	inferArtifactDeclarations(pkg: PackageInfo): ArtifactDeclaration[] {
+		const values: string[] = [];
+		const json = pkg.packageJson;
+		if (Array.isArray(json.files))
+			values.push(...json.files.filter((v): v is string => typeof v === "string"));
+		for (const key of ["main", "module", "types", "typings"] as const)
+			if (typeof json[key] === "string") values.push(json[key] as string);
+		if (typeof json.bin === "string") values.push(json.bin);
+		else if (json.bin && typeof json.bin === "object")
+			values.push(
+				...Object.values(json.bin as Record<string, unknown>).filter(
+					(v): v is string => typeof v === "string",
+				),
+			);
+		const visit = (value: unknown): void => {
+			if (typeof value === "string") values.push(value);
+			else if (value && typeof value === "object")
+				Object.values(value as Record<string, unknown>).forEach(visit);
+		};
+		visit(json.exports);
+		const declarations = new Map<string, ArtifactDeclaration>();
+		for (let value of values) {
+			const exclude = value.startsWith("!");
+			if (exclude) value = value.slice(1);
+			if (/^[a-z]+:/i.test(value) || value.startsWith("#")) continue;
+			value = value.replace(/^\.\//, "").replace(/\\/g, "/");
+			if (
+				!value ||
+				isAbsolute(value) ||
+				normalize(value).startsWith("..") ||
+				/(^|\/)(node_modules|\.git|\.wsu)(\/|$)/.test(value)
+			)
+				throw new Error(`Unsafe artifact path in ${pkg.name}: ${value}`);
+			declarations.set(`${exclude ? "!" : ""}${value}`, {
+				pattern: value,
+				kind: fg.isDynamicPattern(value) ? "glob" : "file",
+				exclude,
+			});
+		}
+		return [...declarations.values()];
+	}
+
+	private async artifactFiles(
+		pkg: PackageInfo,
+		declarations: ArtifactDeclaration[],
+	): Promise<string[]> {
+		const patterns = declarations.map((d) => {
+			const path = join(pkg.path, d.pattern);
+			const pattern =
+				d.kind === "file" && existsSync(path) && statSync(path).isDirectory()
+					? `${d.pattern.replace(/\/$/, "")}/**/*`
+					: d.pattern;
+			return d.exclude ? `!${pattern}` : pattern;
+		});
+		if (!patterns.length) return [];
+		return (
+			await fg(patterns, {
+				cwd: pkg.path,
+				onlyFiles: true,
+				dot: true,
+				followSymbolicLinks: false,
+			})
+		).sort();
+	}
+
+	async getDecision(pkg: PackageInfo): Promise<CacheDecision> {
+		const declarations = this.inferArtifactDeclarations(pkg);
+		const inputHash = await this.calculatePackageHash(pkg, declarations);
+		if (!declarations.some((declaration) => !declaration.exclude))
+			return { status: "non-cacheable", inputHash, declarations };
+		const entry = this.packageCaches.get(pkg.name);
+		if (!entry || entry.inputHash !== inputHash || !entry.artifactFiles?.length)
+			return { status: "miss", inputHash, declarations };
+		const dir = this.getArtifactDir(pkg.name, inputHash);
+		for (const file of entry.artifactFiles)
+			if (!existsSync(join(dir, "files", file.path)))
+				return { status: "corrupt", inputHash, declarations };
+		return { status: "hit", inputHash, declarations };
+	}
+
+	async restore(pkg: PackageInfo, decision?: CacheDecision): Promise<boolean> {
+		const resolved = decision || (await this.getDecision(pkg));
+		if (resolved.status !== "hit") return false;
+		const entry = this.packageCaches.get(pkg.name)!;
+		for (const declaration of resolved.declarations) {
+			if (declaration.exclude) continue;
+			if (declaration.kind === "file")
+				rmSync(join(pkg.path, declaration.pattern), { recursive: true, force: true });
+			else
+				for (const match of await fg(declaration.pattern, {
+					cwd: pkg.path,
+					onlyFiles: false,
+					dot: true,
+				}))
+					rmSync(join(pkg.path, match), { recursive: true, force: true });
+		}
+		const source = join(this.getArtifactDir(pkg.name, resolved.inputHash), "files");
+		for (const file of entry.artifactFiles || []) {
+			const target = resolve(pkg.path, file.path);
+			if (!target.startsWith(resolve(pkg.path) + "/")) return false;
+			mkdirSync(dirname(target), { recursive: true });
+			cpSync(join(source, file.path), target, { dereference: false });
+			chmodSync(target, file.mode);
+			if (
+				this.hashFile(target, { version: CACHE_VERSION, files: {} }, file.path) !==
+				file.hash
+			)
+				return false;
+		}
+		return true;
+	}
+
+	async storeArtifacts(pkg: PackageInfo, buildDuration: number): Promise<boolean> {
+		const declarations = this.inferArtifactDeclarations(pkg);
+		if (!declarations.some((declaration) => !declaration.exclude)) return false;
+		const files = await this.artifactFiles(pkg, declarations);
+		if (!files.length) return false;
+		const inputHash = await this.calculatePackageHash(pkg, declarations);
+		const finalDir = this.getArtifactDir(pkg.name, inputHash);
+		const tempDir = `${finalDir}.tmp-${process.pid}-${Date.now()}`;
+		mkdirSync(join(tempDir, "files"), { recursive: true });
+		const artifactFiles: ArtifactFile[] = [];
+		for (const file of files) {
+			const source = join(pkg.path, file);
+			const target = join(tempDir, "files", file);
+			mkdirSync(dirname(target), { recursive: true });
+			cpSync(source, target, { dereference: false });
+			const stats = lstatSync(source);
+			artifactFiles.push({
+				path: file,
+				hash: this.hashFile(source, { version: CACHE_VERSION, files: {} }, file),
+				mode: stats.mode,
+			});
+		}
+		const artifactHash = this.hashString(
+			artifactFiles.map((f) => `${f.path}:${f.hash}:${f.mode}`).join("\n"),
+		);
+		mkdirSync(dirname(finalDir), { recursive: true });
+		rmSync(finalDir, { recursive: true, force: true });
+		renameSync(tempDir, finalDir);
+		const dependencyHashes: Record<string, string | undefined> = {};
+		for (const depName of this.packageDependencies(pkg))
+			dependencyHashes[depName] = this.packageCaches.get(depName)?.inputHash;
+		this.savePackageCache(pkg.name, {
+			inputHash,
+			dependencyHashes,
+			lastBuild: new Date().toISOString(),
+			buildDuration,
+			builtBy: "wsu",
+			artifactHash,
+			artifactFiles,
+		});
+		return true;
+	}
+
+	private packageDependencies(pkg: PackageInfo): string[] {
+		return [
+			...new Set([
+				...pkg.dependencies,
+				...pkg.devDependencies,
+				...(pkg.optionalDependencies || []),
+				...(pkg.peerDependencies || []),
+			]),
+		];
 	}
 
 	/**
@@ -170,7 +382,9 @@ export class BuildCache {
 	 * Save manifest to disk
 	 */
 	private saveManifest(): void {
-		writeFileSync(this.manifestPath, JSON.stringify(this.manifest, null, 2), "utf8");
+		const temporary = `${this.manifestPath}.tmp-${process.pid}`;
+		writeFileSync(temporary, JSON.stringify(this.manifest, null, 2), "utf8");
+		renameSync(temporary, this.manifestPath);
 	}
 
 	/**
@@ -200,7 +414,9 @@ export class BuildCache {
 		}
 
 		const cachePath = this.getPackageCachePath(packageName);
-		writeFileSync(cachePath, JSON.stringify(entry, null, 2), "utf8");
+		const temporary = `${cachePath}.tmp-${process.pid}`;
+		writeFileSync(temporary, JSON.stringify(entry, null, 2), "utf8");
+		renameSync(temporary, cachePath);
 		this.packageCaches.set(packageName, entry);
 
 		// Update manifest
@@ -303,8 +519,9 @@ export class BuildCache {
 			const relativePaths = batch.map((f) => relative(this.workspaceRoot, f));
 
 			try {
-				const { stdout } = await execAsync(
-					`git check-ignore ${relativePaths.map((p) => `"${p}"`).join(" ")}`,
+				const { stdout } = await execFileAsync(
+					"git",
+					["check-ignore", "--", ...relativePaths],
 					{ cwd: this.workspaceRoot },
 				);
 
@@ -349,7 +566,10 @@ export class BuildCache {
 	/**
 	 * Calculate hash for a package
 	 */
-	async calculatePackageHash(pkg: PackageInfo): Promise<string> {
+	async calculatePackageHash(
+		pkg: PackageInfo,
+		declarations = this.inferArtifactDeclarations(pkg),
+	): Promise<string> {
 		const fileIndex = this.loadPackageFileIndex(pkg.name);
 
 		// Hash package.json
@@ -357,7 +577,20 @@ export class BuildCache {
 		const packageJsonHash = this.hashFile(packageJsonPath, fileIndex, "package.json");
 
 		// Hash source files
-		const sourceFiles = await this.getSourceFiles(pkg.path);
+		const sourceFiles = (await this.getSourceFiles(pkg.path)).filter(
+			(file) =>
+				!declarations.some((d) =>
+					d.exclude
+						? false
+						: d.kind === "glob"
+							? fg.isDynamicPattern(d.pattern) &&
+								fg
+									.sync(d.pattern, { cwd: pkg.path, onlyFiles: true })
+									.includes(file.relative)
+							: file.relative === d.pattern ||
+								file.relative.startsWith(`${d.pattern}/`),
+				),
+		);
 		const fileHashes: string[] = [];
 
 		for (const { path, relative: relPath } of sourceFiles) {
@@ -372,7 +605,7 @@ export class BuildCache {
 
 		// Get dependency hashes
 		const depHashes: string[] = [];
-		for (const depName of [...pkg.dependencies, ...pkg.devDependencies]) {
+		for (const depName of this.packageDependencies(pkg)) {
 			const depEntry = this.packageCaches.get(depName);
 			if (depEntry) {
 				depHashes.push(`${depName}:${depEntry.inputHash}`);
@@ -382,10 +615,46 @@ export class BuildCache {
 		}
 
 		// Combine all hashes
+		const globalPatterns = [
+			"package.json",
+			"bun.lock",
+			"bun.lockb",
+			"pnpm-lock.yaml",
+			"pnpm-workspace.yaml",
+			"package-lock.json",
+			"yarn.lock",
+			".yarnrc.yml",
+			".npmrc",
+			"bunfig.toml",
+			"tsconfig*.json",
+			"*.config.*",
+		];
+		const globalHashes: string[] = [];
+		for (const file of await fg(globalPatterns, { cwd: this.workspaceRoot, onlyFiles: true }))
+			globalHashes.push(
+				`${file}:${this.hashFile(join(this.workspaceRoot, file), fileIndex, `../${file}`)}`,
+			);
+		let packageManager = "unknown";
+		try {
+			const detected = PackageManagerDetector.detect(this.workspaceRoot).packageManager;
+			let version = "unknown";
+			try {
+				version = (
+					await execFileAsync(detected.name, ["--version"], { cwd: this.workspaceRoot })
+				).stdout.trim();
+			} catch {}
+			packageManager = `${detected.name}@${version}`;
+		} catch {}
 		const combined = [
+			`version:${CACHE_VERSION}`,
 			`packageJson:${packageJsonHash}`,
 			`sources:${fileHashes.join(",")}`,
 			`deps:${depHashes.sort().join(",")}`,
+			`global:${globalHashes.sort().join(",")}`,
+			`environment:${process.env.NODE_ENV || "development"}`,
+			`runtime:${process.versions.bun ? `bun@${process.versions.bun}` : `node@${process.version}`}`,
+			`packageManager:${packageManager}`,
+			`script:${pkg.scripts.build || ""}`,
 		].join("\n");
 
 		return this.hashString(combined);
@@ -416,7 +685,7 @@ export class BuildCache {
 
 		// Collect dependency hashes
 		const dependencyHashes: Record<string, string | undefined> = {};
-		for (const depName of [...pkg.dependencies, ...pkg.devDependencies]) {
+		for (const depName of this.packageDependencies(pkg)) {
 			const depEntry = this.packageCaches.get(depName);
 			dependencyHashes[depName] = depEntry?.inputHash;
 		}
@@ -459,8 +728,8 @@ export class BuildCache {
 	 * Invalidate a package and its dependents (conservative)
 	 */
 	invalidateDependents(packageName: string, packages: PackageInfo[]): void {
-		const dependents = packages.filter(
-			(p) => p.dependencies.includes(packageName) || p.devDependencies.includes(packageName),
+		const dependents = packages.filter((p) =>
+			this.packageDependencies(p).includes(packageName),
 		);
 
 		for (const dependent of dependents) {
@@ -486,6 +755,8 @@ export class BuildCache {
 		if (existsSync(packagesDir)) {
 			rmSync(packagesDir, { recursive: true, force: true });
 		}
+		const artifactsDir = join(this.baseCacheDir, ARTIFACTS_DIR);
+		if (existsSync(artifactsDir)) rmSync(artifactsDir, { recursive: true, force: true });
 	}
 
 	/**
@@ -496,10 +767,22 @@ export class BuildCache {
 		lastUpdated: string;
 		oldestBuild: string | null;
 		newestBuild: string | null;
+		artifactCount: number;
+		artifactSize: number;
+		metadataOnly: number;
+		corrupt: number;
 	} {
 		const entries = Array.from(this.packageCaches.values());
 		const timestamps = entries.map((e) => new Date(e.lastBuild).getTime()).sort();
 
+		let artifactSize = 0;
+		let corrupt = 0;
+		for (const [name, entry] of this.packageCaches)
+			for (const file of entry.artifactFiles || []) {
+				const path = join(this.getArtifactDir(name, entry.inputHash), "files", file.path);
+				if (existsSync(path)) artifactSize += statSync(path).size;
+				else corrupt++;
+			}
 		return {
 			totalPackages: entries.length,
 			lastUpdated: new Date().toISOString(),
@@ -508,6 +791,10 @@ export class BuildCache {
 				timestamps.length > 0
 					? new Date(timestamps[timestamps.length - 1]!).toISOString()
 					: null,
+			artifactCount: entries.filter((e) => e.artifactFiles?.length).length,
+			artifactSize,
+			metadataOnly: entries.filter((e) => !e.artifactFiles?.length).length,
+			corrupt,
 		};
 	}
 

@@ -4,13 +4,27 @@ import fg from "fast-glob";
 import { PackageManagerDetector } from "../package-managers/index.ts";
 import type { PackageManager } from "../package-managers/index.ts";
 
+export type DependencyKind =
+	| "dependency"
+	| "devDependency"
+	| "optionalDependency"
+	| "peerDependency";
+export interface PackageDependency {
+	name: string;
+	range: string;
+	kind: DependencyKind;
+}
+
 export interface PackageInfo {
 	name: string;
 	path: string;
 	packageJson: Record<string, unknown>;
 	dependencies: string[];
 	devDependencies: string[];
+	optionalDependencies?: string[];
+	peerDependencies?: string[];
 	scripts: Record<string, string>;
+	isRoot?: boolean;
 }
 
 export interface WorkspaceInfo {
@@ -18,6 +32,7 @@ export interface WorkspaceInfo {
 	packages: PackageInfo[];
 	packageMap: Map<string, PackageInfo>;
 	packageManager: PackageManager;
+	rootPackage?: PackageInfo;
 }
 
 export class WorkspaceParser {
@@ -39,8 +54,13 @@ export class WorkspaceParser {
 		const packagePaths = await this.resolvePackagePaths(workspaceConfig.packages || []);
 		const packages = await Promise.all(packagePaths.map((path) => this.loadPackageInfo(path)));
 
+		const rootPackage = existsSync(join(this.workspaceRoot, "package.json"))
+			? await this.loadPackageInfo(this.workspaceRoot, true)
+			: undefined;
 		const packageMap = new Map<string, PackageInfo>();
 		packages.forEach((pkg) => {
+			if (packageMap.has(pkg.name))
+				throw new Error(`Duplicate workspace package name: ${pkg.name}`);
 			packageMap.set(pkg.name, pkg);
 		});
 
@@ -49,6 +69,7 @@ export class WorkspaceParser {
 			packages,
 			packageMap,
 			packageManager: this.packageManager,
+			rootPackage,
 		};
 	}
 
@@ -120,7 +141,12 @@ export class WorkspaceParser {
 			for (const path of paths) {
 				const packageJsonPath = join(this.workspaceRoot, path, "package.json");
 				if (existsSync(packageJsonPath)) {
-					packagePaths.push(resolve(this.workspaceRoot, path));
+					const resolvedPath = resolve(this.workspaceRoot, path);
+					if (!resolvedPath.startsWith(this.workspaceRoot + "/"))
+						throw new Error(
+							`Workspace package resolves outside the workspace root: ${path}`,
+						);
+					packagePaths.push(resolvedPath);
 				}
 			}
 		}
@@ -152,7 +178,7 @@ export class WorkspaceParser {
 	/**
 	 * Load package.json and extract relevant information
 	 */
-	private async loadPackageInfo(packagePath: string): Promise<PackageInfo> {
+	private async loadPackageInfo(packagePath: string, isRoot = false): Promise<PackageInfo> {
 		const packageJsonPath = join(packagePath, "package.json");
 
 		if (!existsSync(packageJsonPath)) {
@@ -168,10 +194,24 @@ export class WorkspaceParser {
 			throw new Error(`Package name not found in ${packageJsonPath}`);
 		}
 
-		const dependenciesObj = packageJson.dependencies as Record<string, string> | undefined;
-		const devDependenciesObj = packageJson.devDependencies as
-			| Record<string, string>
-			| undefined;
+		const dependencyField = (name: string): Record<string, string> => {
+			const value = packageJson[name];
+			if (value === undefined) return {};
+			if (
+				!value ||
+				typeof value !== "object" ||
+				Array.isArray(value) ||
+				Object.values(value as Record<string, unknown>).some(
+					(entry) => typeof entry !== "string",
+				)
+			)
+				throw new Error(`Invalid ${name} field in ${packageJsonPath}`);
+			return value as Record<string, string>;
+		};
+		const dependenciesObj = dependencyField("dependencies");
+		const devDependenciesObj = dependencyField("devDependencies");
+		const optionalDependenciesObj = dependencyField("optionalDependencies");
+		const peerDependenciesObj = dependencyField("peerDependencies");
 		const scriptsObj = packageJson.scripts as Record<string, string> | undefined;
 
 		const dependencies = Object.keys(dependenciesObj || {});
@@ -179,12 +219,15 @@ export class WorkspaceParser {
 		const scripts = scriptsObj || {};
 
 		return {
-			name: packageJson.name,
+			name: isRoot ? "__wsu_root__" : packageJson.name,
 			path: packagePath,
 			packageJson,
 			dependencies,
 			devDependencies,
+			optionalDependencies: Object.keys(optionalDependenciesObj || {}),
+			peerDependencies: Object.keys(peerDependenciesObj || {}),
 			scripts,
+			isRoot,
 		};
 	}
 

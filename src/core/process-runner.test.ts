@@ -129,6 +129,36 @@ describe("ProcessRunner", () => {
 			// Should take longer with concurrency limit of 2
 			expect(endTime - startTime).toBeGreaterThanOrEqual(10);
 		});
+
+		it("should report each started task exactly once during fail-fast", async () => {
+			const commands = [
+				{
+					command: "false",
+					args: [],
+					options: { cwd: process.cwd() },
+					logOptions: { prefix: "failed", color: "red" },
+				},
+				{
+					command: "sleep",
+					args: ["5"],
+					options: { cwd: process.cwd() },
+					logOptions: { prefix: "active", color: "blue" },
+				},
+				{
+					command: "echo",
+					args: ["must not start"],
+					options: { cwd: process.cwd() },
+					logOptions: { prefix: "unscheduled", color: "yellow" },
+				},
+			];
+
+			const results = await ProcessRunner.runParallel(commands, 2, true);
+			const packageNames = results.map((result) => result.packageName);
+
+			expect(packageNames).toHaveLength(2);
+			expect(new Set(packageNames)).toEqual(new Set(["failed", "active"]));
+			expect(packageNames).not.toContain("unscheduled");
+		});
 	});
 
 	describe("runSequential", () => {

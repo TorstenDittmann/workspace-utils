@@ -363,7 +363,7 @@ describe("WorkspaceParser", () => {
 	describe("error handling", () => {
 		it("should throw error when no workspace configuration found", () => {
 			expect(() => new WorkspaceParser(testDir)).toThrow(
-				"No package manager detected. Please ensure you have a lock file (bun.lockb, pnpm-lock.yaml, or package-lock.json) or workspace configuration in your project.",
+				"No package manager detected. Expected Bun, pnpm, npm, or a Yarn Berry project with an identifying lock/configuration file.",
 			);
 		});
 

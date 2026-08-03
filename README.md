@@ -12,8 +12,13 @@ A **universal CLI tool** for orchestrating scripts across **monorepo workspaces*
 - 🏗️ **Smart build ordering** respecting package dependencies
 - 📺 **Real-time log streaming** with timestamps
 - 💾 **Smart build caching** - skip unchanged packages automatically
+- 📁 **Artifact restoration** inferred from package metadata (`files`, exports, entry points)
+- 🎯 **Affected package detection** from Git changes and downstream dependents
+- 🔗 **Relationship filters** for dependencies and dependents
+- 🧭 **Dry runs and dependency graph output** for CI planning
 - 🎯 **Zero configuration** - works with any workspace setup
 - 🌐 **Universal support** - works with Bun, pnpm, and npm workspaces
+- 🧶 **Yarn Berry support** with explicit modern Yarn detection
 
 ## 🛠️ Installation
 
@@ -85,6 +90,10 @@ Add to your `package.json` scripts and run with your package manager:
 - `-c, --concurrency <number>` - Maximum concurrent processes (default: 4)
 - `-f, --filter <pattern>` - Filter packages by glob pattern
 - `--sequential` - Run scripts sequentially (default is parallel)
+- `--topological` - Run dependencies before dependents
+- `--affected` / `--since <ref>` - Run only packages affected by Git changes
+- `--dry-run` - Print the plan without starting scripts
+- `--fail-fast`, `--continue-on-error`, `--retry`, `--timeout` - Control failures
 
 **Examples:**
 
@@ -216,6 +225,29 @@ wsu cache clear
 ```
 
 ## 🔍 Package Filtering
+
+Filters are repeatable and support package names, paths, exclusions, dependencies, and dependents:
+
+```bash
+wsu run test --filter 'app...'          # app and its dependencies
+wsu run test --filter '...core'         # core and all dependents
+wsu run test --filter './apps/*'        # packages by directory
+wsu run test --filter '@scope/*' --filter '!@scope/docs'
+```
+
+## Changed packages, plans, and graphs
+
+```bash
+wsu run test --affected
+wsu build --since origin/main
+wsu build --dry-run
+wsu graph --format text
+wsu graph --format json
+wsu graph --format dot
+wsu --output json run test --affected   # newline-delimited JSON events
+```
+
+Build artifacts are inferred exclusively from package metadata. Packages without declared output paths still build normally but are not artifact-cached.
 
 Use glob patterns to target specific packages:
 

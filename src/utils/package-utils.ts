@@ -24,7 +24,12 @@ export function buildDependencyGraph(packages: PackageInfo[]): DependencyGraph {
 	// Add dependency relationships
 	packages.forEach((pkg) => {
 		// Check both dependencies and devDependencies
-		const allDeps = [...pkg.dependencies, ...pkg.devDependencies];
+		const allDeps = [
+			...pkg.dependencies,
+			...pkg.devDependencies,
+			...(pkg.optionalDependencies || []),
+			...(pkg.peerDependencies || []),
+		];
 
 		allDeps.forEach((depName) => {
 			// Only add dependency if it's also a workspace package
@@ -107,6 +112,7 @@ export function prepareCommandExecution(
 			logOptions: {
 				prefix: pkg.name,
 				color: getPackageColor(pkg.name),
+				taskName: scriptName,
 			},
 			packageInfo: pkg,
 		};

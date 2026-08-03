@@ -4,11 +4,13 @@ import type { PackageManager, PackageManagerDetectionResult } from "./types.ts";
 import { BunPackageManager } from "./bun.ts";
 import { PnpmPackageManager } from "./pnpm.ts";
 import { NpmPackageManager } from "./npm.ts";
+import { YarnPackageManager } from "./yarn.ts";
 
 export class PackageManagerDetector {
 	private static readonly packageManagers = [
 		new BunPackageManager(),
 		new PnpmPackageManager(),
+		new YarnPackageManager(),
 		new NpmPackageManager(),
 	];
 
@@ -30,8 +32,18 @@ export class PackageManagerDetector {
 
 		const [result] = results;
 		if (!result) {
+			if (existsSync(join(workspaceRoot, "yarn.lock"))) {
+				throw new Error(
+					"Yarn Classic or ambiguous Yarn project detected. Add .yarnrc.yml or packageManager: yarn@2+ for Yarn Berry.",
+				);
+			}
 			throw new Error(
-				"No package manager detected. Please ensure you have a lock file (bun.lockb, pnpm-lock.yaml, or package-lock.json) or workspace configuration in your project.",
+				"No package manager detected. Expected Bun, pnpm, npm, or a Yarn Berry project with an identifying lock/configuration file.",
+			);
+		}
+		if (results[1] && result.confidence >= 100 && results[1].confidence === result.confidence) {
+			throw new Error(
+				`Ambiguous package manager detection: ${result.packageManager.name} and ${results[1].packageManager.name}`,
 			);
 		}
 
@@ -82,6 +94,9 @@ export class PackageManagerDetector {
 				break;
 			case "npm":
 				if (existsSync(join(workspaceRoot, ".npmrc"))) confidence += 30;
+				break;
+			case "yarn":
+				if (existsSync(join(workspaceRoot, ".yarnrc.yml"))) confidence += 80;
 				break;
 		}
 

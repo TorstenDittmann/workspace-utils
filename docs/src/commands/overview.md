@@ -1,6 +1,6 @@
 # Commands Overview
 
-workspace-utils provides four main commands designed to handle different aspects of monorepo workflow management. Each command is optimized for specific use cases while sharing common functionality like package filtering and concurrency control.
+workspace-utils provides commands for task execution, dependency-aware builds, development, cleanup, cache management, and graph inspection. Commands share package selection, affected detection, dry-run, and failure controls where applicable.
 
 ## Command Summary
 
@@ -10,6 +10,20 @@ workspace-utils provides four main commands designed to handle different aspects
 | [`build`](./build.md) | Build packages respecting dependencies | **Dependency order** | Production builds, CI/CD       |
 | [`dev`](./dev.md)     | Start development servers              | **Parallel**         | Local development              |
 | [`clean`](./clean.md) | Remove node_modules directories        | **Sequential**       | Fresh installs, disk cleanup   |
+| `graph`               | Inspect workspace dependencies         | **Read-only**        | Planning and CI diagnostics    |
+
+## Advanced selection
+
+Use repeatable filters to compose package sets. A trailing ellipsis includes dependencies, a leading ellipsis includes dependents, `./` matches package directories, and `!` excludes matches.
+
+```bash
+wsu run test --filter 'app...'
+wsu run test --filter '...core' --filter '!docs'
+wsu build --affected
+wsu build --since origin/main
+```
+
+Add `--dry-run` to inspect a plan without executing or mutating the workspace. Add global `--output json` for newline-delimited execution events.
 
 ## Quick Reference
 

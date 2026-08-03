@@ -3,10 +3,9 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { WorkspaceParser } from "../core/workspace.ts";
 import { Output } from "../utils/output.ts";
+import { resolveTargets, type CommonCommandOptions } from "../utils/command-options.ts";
 
-interface CleanCommandOptions {
-	filter?: string;
-}
+interface CleanCommandOptions extends CommonCommandOptions {}
 
 export async function cleanCommand(options: CleanCommandOptions): Promise<void> {
 	try {
@@ -20,14 +19,9 @@ export async function cleanCommand(options: CleanCommandOptions): Promise<void> 
 		Output.dim(`Found ${workspace.packages.length} packages\n`, "package");
 
 		// Filter packages if pattern provided
-		let targetPackages = workspace.packages;
-		if (options.filter) {
-			targetPackages = parser.filterPackages(workspace.packages, options.filter);
-			Output.log(
-				`Filtered to ${targetPackages.length} packages matching "${options.filter}"`,
-				"magnifying",
-				"yellow",
-			);
+		let targetPackages = resolveTargets(workspace, options);
+		if (options.filter?.length) {
+			Output.log(`Filtered to ${targetPackages.length} packages`, "magnifying", "yellow");
 		}
 
 		const startTime = Date.now();
@@ -35,11 +29,11 @@ export async function cleanCommand(options: CleanCommandOptions): Promise<void> 
 		let skipped = 0;
 
 		// Clean root node_modules first (only if no filter)
-		if (!options.filter) {
+		if (!options.filter?.length && !options.affected && !options.since) {
 			const rootNodeModules = join(workspace.root, "node_modules");
 			if (existsSync(rootNodeModules)) {
 				Output.log(`Removing ${rootNodeModules}`, "fire", "yellow");
-				await rm(rootNodeModules, { recursive: true, force: true });
+				if (!options.dryRun) await rm(rootNodeModules, { recursive: true, force: true });
 				cleaned++;
 			}
 		}
@@ -50,7 +44,7 @@ export async function cleanCommand(options: CleanCommandOptions): Promise<void> 
 
 			if (existsSync(nodeModulesPath)) {
 				Output.log(`Removing ${pkg.name}/node_modules`, "fire", "yellow");
-				await rm(nodeModulesPath, { recursive: true, force: true });
+				if (!options.dryRun) await rm(nodeModulesPath, { recursive: true, force: true });
 				cleaned++;
 			} else {
 				skipped++;

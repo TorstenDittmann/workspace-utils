@@ -15,6 +15,7 @@
     - [dev](./commands/dev.md)
     - [cache](./commands/cache.md)
     - [clean](./commands/clean.md)
+    - [graph](./commands/graph.md)
 
 # Usage Examples
 

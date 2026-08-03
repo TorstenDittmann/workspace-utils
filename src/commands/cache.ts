@@ -69,6 +69,10 @@ async function showCacheStatus(cache: BuildCache, packages: { name: string }[]):
 	}
 
 	Output.success(`Cached packages: ${stats.totalPackages}`);
+	Output.dim(`Restorable artifacts: ${stats.artifactCount}`, "package");
+	Output.dim(`Artifact size: ${stats.artifactSize} bytes`, "folder");
+	Output.dim(`Metadata-only entries: ${stats.metadataOnly}`, "package");
+	if (stats.corrupt) Output.warning(`Corrupt artifact files: ${stats.corrupt}`);
 	Output.dim(`Cache last updated: ${new Date(stats.lastUpdated).toLocaleString()}`, "clock");
 
 	if (stats.oldestBuild && stats.newestBuild) {

@@ -1,6 +1,6 @@
 {
 	"name": "workspace-utils",
-	"version": "2.1.0",
+	"version": "2.1.1",
 	"description": "A CLI tool to orchestrate scripts across monorepo workspaces (Bun, pnpm, npm) with parallel execution and dependency-aware builds.",
 	"keywords": [
 		"build-orchestration",
@@ -57,9 +57,6 @@
 		"oxfmt": "^0.27.0",
 		"oxlint": "^1.42.0",
 		"publint": "^0.3.17"
-	},
-	"peerDependencies": {
-		"typescript": "^5.9.3"
 	},
 	"engines": {
 		"bun": ">=1.0.0",

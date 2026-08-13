@@ -90,6 +90,9 @@ wsu cache
 wsu cache clear
 ```
 
+To reuse build metadata and artifacts on fresh CI runners, persist `.wsu/`. See
+[GitHub Actions caching](./cache.md#github-actions) for a complete workflow.
+
 ## Examples
 
 ### Basic Usage

@@ -224,6 +224,10 @@ wsu cache
 wsu cache clear
 ```
 
+Persist `.wsu/` between CI runs to reuse metadata and restorable build artifacts. See the
+[caching guide](https://torstendittmann.github.io/workspace-utils/commands/cache/#github-actions)
+for output declarations, cache-key guidance, and a complete GitHub Actions example.
+
 ## 🔍 Package Filtering
 
 Filters are repeatable and support package names, paths, exclusions, dependencies, and dependents:

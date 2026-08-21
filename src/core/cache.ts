@@ -12,7 +12,7 @@ import {
 	lstatSync,
 	chmodSync,
 } from "fs";
-import { join, relative, resolve, dirname, isAbsolute, normalize } from "path";
+import { join, relative, resolve, dirname, isAbsolute, normalize, sep } from "path";
 import { promisify } from "util";
 import { execFile } from "child_process";
 import fg from "fast-glob";
@@ -244,7 +244,7 @@ export class BuildCache {
 		const source = join(this.getArtifactDir(pkg.name, resolved.inputHash), "files");
 		for (const file of entry.artifactFiles || []) {
 			const target = resolve(pkg.path, file.path);
-			if (!target.startsWith(resolve(pkg.path) + "/")) return false;
+			if (!target.startsWith(resolve(pkg.path) + sep)) return false;
 			mkdirSync(dirname(target), { recursive: true });
 			cpSync(join(source, file.path), target, { dereference: false });
 			chmodSync(target, file.mode);
@@ -516,7 +516,9 @@ export class BuildCache {
 
 		for (let i = 0; i < files.length; i += batchSize) {
 			const batch = files.slice(i, i + batchSize);
-			const relativePaths = batch.map((f) => relative(this.workspaceRoot, f));
+			const relativePaths = batch.map((f) =>
+				relative(this.workspaceRoot, f).replace(/\\/g, "/"),
+			);
 
 			try {
 				const { stdout } = await execFileAsync(
@@ -559,7 +561,7 @@ export class BuildCache {
 
 		return nonIgnored.map((f) => ({
 			path: f,
-			relative: relative(packagePath, f),
+			relative: relative(packagePath, f).replace(/\\/g, "/"),
 		}));
 	}
 

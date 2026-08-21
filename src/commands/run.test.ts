@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
 import { runCommand } from "./run.ts";
 import { spyOn } from "bun:test";
 
@@ -20,7 +20,7 @@ describe("runCommand", () => {
 
 	afterEach(() => {
 		// Change back to original directory
-		process.chdir(process.cwd().replace("/test-temp-run", ""));
+		process.chdir(dirname(testDir));
 
 		// Clean up test directory
 		if (existsSync(testDir)) {
@@ -285,7 +285,7 @@ describe("runCommand", () => {
 				throw new Error("process.exit called");
 			});
 
-			const options = {};
+			const options = { dryRun: true };
 
 			try {
 				await runCommand("test", options);

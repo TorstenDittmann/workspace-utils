@@ -285,7 +285,7 @@ describe("runCommand", () => {
 				throw new Error("process.exit called");
 			});
 
-			const options = {};
+			const options = { dryRun: true };
 
 			try {
 				await runCommand("test", options);

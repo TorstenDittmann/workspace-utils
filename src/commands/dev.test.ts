@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { devCommand } from "./dev.ts";
+import { ProcessRunner } from "../core/process-runner.ts";
 
 describe("devCommand", () => {
 	const testDir = join(process.cwd(), "test-temp-dev");
@@ -246,6 +247,13 @@ describe("devCommand", () => {
 
 		it("should detect npm and run dev", async () => {
 			const consoleSpy = spyOn(console, "log");
+			const runCommandSpy = spyOn(ProcessRunner, "runCommand").mockResolvedValue({
+				success: true,
+				exitCode: 0,
+				packageName: "core",
+				command: "npm run dev",
+				duration: 0,
+			});
 			const processExitSpy = spyOn(process, "exit").mockImplementation(() => {
 				throw new Error("process.exit called");
 			});
@@ -261,6 +269,7 @@ describe("devCommand", () => {
 			);
 
 			consoleSpy.mockRestore();
+			runCommandSpy.mockRestore();
 			processExitSpy.mockRestore();
 		});
 	});

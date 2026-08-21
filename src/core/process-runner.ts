@@ -268,28 +268,21 @@ export class ProcessRunner {
 		const children = Array.from(this.activeChildren);
 		if (children.length === 0) return;
 
-		// Send initial signal
-		for (const child of children) {
-			try {
-				child.kill(signal);
-			} catch {
-				// ignore
-			}
-		}
-
-		// Await close for each with timeout
-		await Promise.all(
+		// Register close handlers before signaling so fast exits cannot race the listener.
+		const closed = Promise.all(
 			children.map((child) => {
 				return new Promise<void>((resolve) => {
 					let settled = false;
+					let forceTimeout: ReturnType<typeof setTimeout> | undefined;
 					const onClose = () => {
 						if (settled) return;
 						settled = true;
+						if (forceTimeout) clearTimeout(forceTimeout);
 						resolve();
 					};
 					child.once("close", onClose);
 
-					setTimeout(() => {
+					forceTimeout = setTimeout(() => {
 						if (settled) return;
 						// Force kill if still alive
 						try {
@@ -300,13 +293,19 @@ export class ProcessRunner {
 						settled = true;
 						resolve();
 					}, graceMs);
-
-					// If the process has already exited, resolve quickly
-					// Note: There's no portable way to check if it's already dead without race conditions,
-					// the 'close' handler above will handle it if it fires immediately.
 				});
 			}),
 		);
+
+		for (const child of children) {
+			try {
+				child.kill(signal);
+			} catch {
+				// ignore
+			}
+		}
+
+		await closed;
 	}
 
 	/**

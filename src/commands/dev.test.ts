@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
 import { devCommand } from "./dev.ts";
 
 describe("devCommand", () => {
@@ -19,7 +19,7 @@ describe("devCommand", () => {
 
 	afterEach(() => {
 		// Change back to original directory
-		process.chdir(process.cwd().replace("/test-temp-dev", ""));
+		process.chdir(dirname(testDir));
 
 		// Clean up test directory
 		if (existsSync(testDir)) {

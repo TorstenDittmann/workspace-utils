@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from "fs";
-import { join, resolve, dirname } from "path";
+import { join, resolve, dirname, sep } from "path";
 import fg from "fast-glob";
 import { PackageManagerDetector } from "../package-managers/index.ts";
 import type { PackageManager } from "../package-managers/index.ts";
@@ -142,7 +142,7 @@ export class WorkspaceParser {
 				const packageJsonPath = join(this.workspaceRoot, path, "package.json");
 				if (existsSync(packageJsonPath)) {
 					const resolvedPath = resolve(this.workspaceRoot, path);
-					if (!resolvedPath.startsWith(this.workspaceRoot + "/"))
+					if (!resolvedPath.startsWith(this.workspaceRoot + sep))
 						throw new Error(
 							`Workspace package resolves outside the workspace root: ${path}`,
 						);

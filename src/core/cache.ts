@@ -15,7 +15,7 @@ import {
 import { join, relative, resolve, dirname, isAbsolute, normalize, sep } from "path";
 import { promisify } from "util";
 import { execFile } from "child_process";
-import fg from "fast-glob";
+import { glob, globSync, isDynamicPattern } from "tinyglobby";
 import type { PackageInfo } from "./workspace.ts";
 import { Output } from "../utils/output.ts";
 import { PackageManagerDetector } from "../package-managers/detector.ts";
@@ -180,7 +180,7 @@ export class BuildCache {
 				throw new Error(`Unsafe artifact path in ${pkg.name}: ${value}`);
 			declarations.set(`${exclude ? "!" : ""}${value}`, {
 				pattern: value,
-				kind: fg.isDynamicPattern(value) ? "glob" : "file",
+				kind: isDynamicPattern(value) ? "glob" : "file",
 				exclude,
 			});
 		}
@@ -201,11 +201,12 @@ export class BuildCache {
 		});
 		if (!patterns.length) return [];
 		return (
-			await fg(patterns, {
+			await glob(patterns, {
 				cwd: pkg.path,
 				onlyFiles: true,
 				dot: true,
 				followSymbolicLinks: false,
+				expandDirectories: false,
 			})
 		).sort();
 	}
@@ -234,10 +235,11 @@ export class BuildCache {
 			if (declaration.kind === "file")
 				rmSync(join(pkg.path, declaration.pattern), { recursive: true, force: true });
 			else
-				for (const match of await fg(declaration.pattern, {
+				for (const match of await glob(declaration.pattern, {
 					cwd: pkg.path,
 					onlyFiles: false,
 					dot: true,
+					expandDirectories: false,
 				}))
 					rmSync(join(pkg.path, match), { recursive: true, force: true });
 		}
@@ -550,10 +552,11 @@ export class BuildCache {
 	private async getSourceFiles(
 		packagePath: string,
 	): Promise<{ path: string; relative: string }[]> {
-		const allFiles = await fg(["**/*"], {
+		const allFiles = await glob(["**/*"], {
 			cwd: packagePath,
 			absolute: true,
 			onlyFiles: true,
+			expandDirectories: false,
 			ignore: ["node_modules/**", ".git/**", CACHE_DIR_NAME + "/**"],
 		});
 
@@ -585,10 +588,12 @@ export class BuildCache {
 					d.exclude
 						? false
 						: d.kind === "glob"
-							? fg.isDynamicPattern(d.pattern) &&
-								fg
-									.sync(d.pattern, { cwd: pkg.path, onlyFiles: true })
-									.includes(file.relative)
+							? isDynamicPattern(d.pattern) &&
+								globSync(d.pattern, {
+									cwd: pkg.path,
+									onlyFiles: true,
+									expandDirectories: false,
+								}).includes(file.relative)
 							: file.relative === d.pattern ||
 								file.relative.startsWith(`${d.pattern}/`),
 				),
@@ -632,7 +637,11 @@ export class BuildCache {
 			"*.config.*",
 		];
 		const globalHashes: string[] = [];
-		for (const file of await fg(globalPatterns, { cwd: this.workspaceRoot, onlyFiles: true }))
+		for (const file of await glob(globalPatterns, {
+			cwd: this.workspaceRoot,
+			onlyFiles: true,
+			expandDirectories: false,
+		}))
 			globalHashes.push(
 				`${file}:${this.hashFile(join(this.workspaceRoot, file), fileIndex, `../${file}`)}`,
 			);

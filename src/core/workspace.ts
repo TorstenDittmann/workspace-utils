@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join, resolve, dirname, sep } from "path";
-import fg from "fast-glob";
+import { glob } from "tinyglobby";
 import { PackageManagerDetector } from "../package-managers/index.ts";
 import type { PackageManager } from "../package-managers/index.ts";
 
@@ -132,10 +132,11 @@ export class WorkspaceParser {
 				continue; // Skip for now, we'll handle exclusions later
 			}
 
-			const paths = await fg(pattern, {
+			const paths = await glob(pattern, {
 				cwd: this.workspaceRoot,
 				onlyDirectories: true,
 				absolute: false,
+				expandDirectories: false,
 			});
 
 			for (const path of paths) {
@@ -158,10 +159,11 @@ export class WorkspaceParser {
 
 			for (const pattern of exclusionPatterns) {
 				const cleanPattern = pattern.slice(1); // Remove '!'
-				const paths = await fg(cleanPattern, {
+				const paths = await glob(cleanPattern, {
 					cwd: this.workspaceRoot,
 					onlyDirectories: true,
 					absolute: false,
+					expandDirectories: false,
 				});
 
 				paths.forEach((path) => {

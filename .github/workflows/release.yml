@@ -21,7 +21,10 @@ jobs:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
             - run: bun install --frozen-lockfile
-            # bun publish cannot generate provenance statements, so publish with npm
+            # build before npm reads package.json, or it drops the bin entries pointing into dist/
+            - run: bun run build
+            # bun publish cannot generate provenance statements, so publish with npm.
+            # npm uses trusted publishing (OIDC) when configured on npmjs.com, else NODE_AUTH_TOKEN.
             - run: npm publish --provenance --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
